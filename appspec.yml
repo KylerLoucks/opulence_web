@@ -1,0 +1,57 @@
+version: 0.0
+os: linux
+files:
+  - source: src
+    destination: /home/ec2-user/src
+  - source: public
+    destination: /home/ec2-user/public
+  - source: ./card_types.py
+    destination: /home/ec2-user
+  - source: ./Config.py
+    destination: /home/ec2-user
+  - source: ./dragon_types.py
+    destination: /home/ec2-user
+  - source: ./game_logs.py
+    destination: /home/ec2-user
+  - source: ./game_objects.py
+    destination: /home/ec2-user
+  - source: ./GlobalMethods.py
+    destination: /home/ec2-user
+  - source: ./main.py
+    destination: /home/ec2-user
+  - source: ./Opulence.py
+    destination: /home/ec2-user
+  - source: ./rune.py
+    destination: /home/ec2-user
+  - source: ./shop.py
+    destination: /home/ec2-user
+  - source: ./vue.config.js
+    destination: /home/ec2-user
+  - source: ./package.json
+    destination: /home/ec2-user
+  - source: ./package-lock.json
+    destination: /home/ec2-user
+  - source: ./jsconfig.json
+    destination: /home/ec2-user
+  - source: ./babel.config.js
+    destination: /home/ec2-user
+file_exists_behavior: OVERWRITE
+hooks:
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 300
+      runas: root
+
+  # After the "Install" lifecycle hook,
+  # which is the hook that copies all the contents declared in the 'files' section above
+  AfterInstall: 
+    - location: scripts/install_dependencies.sh
+      timeout: 900
+      runas: root
+
+  ApplicationStart:
+    - location: scripts/start_server.sh
+      timeout: 300
+      runas: root
+  
+  

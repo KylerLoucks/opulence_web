@@ -1,0 +1,129 @@
+Parameters:
+  # LatestAmiId:
+  #   Description: "AMI for EC2"
+  #   Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+  #   Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  PreBuiltAmi:
+    Description: "AMI-Id for EC2 Instance"
+    Type: "AWS::EC2::Image::Id"
+  SSHKey:
+    Description: "SSH KeyPair for the EC2 Instance"
+    Type: "AWS::EC2::KeyPair::KeyName"
+  OpulenceS3Storage:
+    Description: "S3 Bucket Name containing the /dist folder and main.py for Opulence"
+    Type: "String"
+    Default: "opulence-storage"
+
+Resources:
+  SGInstance:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      # VpcId: !Ref VPC
+      GroupDescription: Control access to EC2 Instance
+      SecurityGroupIngress: 
+        - Description: 'Allow HTTP IPv4 IN'
+          IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'
+        - Description: 'Allow HTTPS IPv4 IN'
+          IpProtocol: tcp
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: '0.0.0.0/0'
+        - Description: 'Allow SSH IN'
+          IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        - Key: "Name"
+          Value: !Sub ${AWS::StackId}
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+              - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: S3Access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+                Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:DeleteObject"
+                Resource:
+                  - !Sub "arn:aws:s3:::${OpulenceS3Storage}"
+                  - !Sub "arn:aws:s3:::${OpulenceS3Storage}/*"
+  EC2InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - 
+          !Ref EC2Role
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    CreationPolicy: # Used with Cfn-Signal
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: "t2.micro"
+      ImageId: !Ref PreBuiltAmi
+      KeyName: !Ref SSHKey
+      SecurityGroupIds:
+        - !Ref SGInstance
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      Tags:
+        - Key: "Name"
+          Value: !Sub ${AWS::StackId}
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          aws s3 cp s3://${OpulenceS3Storage}/ /home/ec2-user --recursive
+          cd /home/ec2-user/src
+          sed -i s/localhost:5000/${IPAddress}/1 App.vue
+          cd /home/ec2-user
+          npm run build
+          sed -i s/ADDRESS/${IPAddress}/1 nginx.conf
+          mv dist /usr/share/nginx/html
+          mv nginx.conf /etc/nginx/conf.d
+          systemctl start nginx
+          
+          # run a screen in detached mode as ec2-user (root user gets logged-out, which removes the screen session) and execute main.py
+          runuser -l ec2-user -c 'screen -dmS "backend" python3.9 main.py'
+
+          # Cfn Signal:
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2Instance --region ${AWS::Region}
+          
+
+  IPAddress:
+    Type: AWS::EC2::EIP
+  IPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref EC2Instance
+      EIP: !Ref IPAddress
+          
+Outputs:
+  # EC2PublicIP:
+  #   Description: "EC2 Instance Public IP Address"
+  #   Value: !GetAtt EC2Instance.PublicIp
+  EC2PublicIP:
+    Description: "EC2 Instance Public IP Address"
+    Value: !Ref IPAddress
+
+
+      
+      
