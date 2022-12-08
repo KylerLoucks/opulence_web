@@ -3,17 +3,18 @@
     <div v-show="showSignInForm" class="container"> 
         <form @submit.prevent="signIn()">
             <h2 class="head-text">Sign In</h2>
-            <input class="input" v-model="userName" type="text" placeholder="Username/email" autocomplete="on" maxlength="20">
+            <input class="input" v-model="userName" type="text" placeholder="Username/Email" autocomplete="on">
             <input class="input" v-model="password" type="password" placeholder="Password" autocomplete="on" maxlength="20">
-            <span id="forgot-pass" class="clickable-text" v-on:click="(showRegistrationForm = true, showSignInForm = false)">Forgot Password?</span>
-            <h5 v-if="signInError" id="signIn-error">{{signInError}}</h5>
+            <span id="forgot-pass" class="clickable-text" v-on:click="showForgotPassword()">Forgot Password?</span>
+            <h5 v-if="signInError" id="error">{{signInError}}</h5>
+            <h5 v-if="registrationSuccessMsg" id="error">{{registrationSuccessMsg}}</h5>
+
             <button class="confirm-input-btn">Sign In</button>
             
             <div class="lower-text-container">
-                <a>Haven't got an account? <span class="clickable-text" v-on:click="(showRegistrationForm = true, showSignInForm = false)">Register here</span></a>
+                <a>Need an account? <span class="clickable-text" v-on:click="showRegistration()">Sign Up</span></a>
             </div>
         </form>
-
     </div>
 
     <div v-show="showRegistrationForm" class="container"> 
@@ -24,19 +25,51 @@
             <input class="input" v-model="registerPassword" type="password" placeholder="Password" autocomplete="off">
             <input class="input" v-model="confirmPassword" type="password" placeholder="Confirm Password" autocomplete="off">
 
-            <h5 v-if="registerError" id="signIn-error">{{registerError}}</h5>
-            <button class="confirm-input-btn">Register</button>
+            <h5 v-if="registerError" id="error">{{registerError}}</h5>
+            <button class="confirm-input-btn">Sign Up</button>
             <div class="lower-text-container">
-                <a>Already registered? <span class="clickable-text" v-on:click="(showSignInForm = true, showRegistrationForm = false)">Login</span></a>
+                <a>Already have an account? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span></a>
             </div>
         </form>
     </div>
+
     
+    <div v-show="showResetPasswordForm" class="container"> 
+        <form @submit.prevent="resetPassword()">
+            <h2 class="head-text">Forgot Password</h2>
+            <input class="input" v-model="userName" type="text" placeholder="Username/Email" autocomplete="off">
+
+            <h5 v-if="forgotPasswordError" id="error">{{forgotPasswordError}}</h5>
+            <button class="confirm-input-btn">Reset My Password</button>
+            <div class="lower-text-container">
+                <a>Remember your password? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span></a>
+            </div>
+        </form>
+    </div>
+
+    <div v-show="showConfirmPasswordResetForm" class="container"> 
+        <form @submit.prevent="confirmResetPassword()">
+            <h2 class="head-text">Confirm Password Reset</h2>
+            <h5 id="error">A password reset code has been sent to {{destinationEmail}}. Enter the code below to reset your password.</h5>
+            <label for="#code">Code</label>
+            <input class="input" v-model="verificationCode" type="text" placeholder="123456" autocomplete="off">
+            <label for="#new_password">New Password</label>
+            <input class="input" v-model="newPassword" type="password" placeholder="" autocomplete="off">
+            <label for="#enter_new password_again">Enter New Password Again</label>
+            <input class="input" v-model="confirmNewPassword" type="password" placeholder="" autocomplete="off">
+            
+            <h5 v-if="changePasswordError" id="error">{{changePasswordError}}</h5>
+            <button class="confirm-input-btn">Change Password</button>
+        </form>
+    </div>
+
+    <!-- <a>Didn't receive a code? <span class="clickable-text" v-on:click="resendConfirmation()">Resend it</span></a> -->
+
 </template>
   
   
 <script>
-    import {userPool} from './UserPool';
+    import { userPool } from './UserPool';
     import AuthState from './AuthState';
     const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
@@ -53,6 +86,9 @@
         return {
             showSignInForm: false,
             showRegistrationForm: true,
+            showConfirmAccountForm: false,
+            showResetPasswordForm: false,
+            showConfirmPasswordResetForm: false,
             userName: "",
             password: "",
             registerUserName: "",
@@ -62,13 +98,59 @@
 
             signInError: "",
             registerError: "",
+            registrationSuccessMsg: "",
+            
+            verificationCode: "",
+            newPassword: "",
+            confirmNewPassword: "",
+            forgotPasswordError: "",
+            changePasswordError: "",
+            destinationEmail: "",
+
+
+
             AuthState
         }
         
     },
 
     methods: {
-        signIn() {
+        showSignIn: function() {
+            this.showSignInForm = true
+            this.showRegistrationForm = false
+            this.showConfirmAccountForm = false
+            this.showResetPasswordForm = false
+            this.showConfirmAccountForm = false
+        },
+
+        showRegistration: function() {
+            this.showRegistrationForm = true
+            this.showSignInForm = false
+            this.showConfirmAccountForm = false
+        },
+
+        showForgotPassword: function() {
+            this.showResetPasswordForm = true
+            this.showConfirmAccountForm = false
+            this.showRegistrationForm = false
+            this.showSignInForm = false
+        },
+
+        showConfirmPasswordReset: function() {
+            this.showConfirmPasswordResetForm = true
+            this.showResetPasswordForm = false
+            this.showConfirmAccountForm = false
+            this.showRegistrationForm = false
+            this.showSignInForm = false
+        },
+
+        showConfirmAccount: function() {
+            this.showConfirmAccountForm = true
+            this.showRegistrationForm = false
+            this.showSignInForm = false
+        },
+
+        signIn: function() {
             var authenticationData = {
                 Username: this.userName,
                 Password: this.password,
@@ -93,18 +175,27 @@
                     },
                     // login failed
                     onFailure: (err) => {
-                        // alert(err.message || JSON.stringify(err))
-                        console.log("login failed: ", err)
-                        this.password = ""
-                        this.signInError = err.message
+                        // if the user isn't confirmed yet.
+                        if (err.code === "UserNotConfirmedException") {
+                            this.signInError = `${err.message} You should have received an email to confirm your account.`
+                        } else {
+                            this.password = ""
+                            this.signInError = err.message
+                        }
+                        
                     }
                 });
         },
 
-        register() {
+        register: function() {
             if (this.confirmPassword != this.registerPassword) {
-                this.registerError = "Passwords do not match"
+                this.registerError = "Passwords do not match."
                 return
+            }
+
+            if (this.confirmPassword.length < 6) {
+                this.registerError = "Password length must be at least 6 characters long."
+                return;
             }
 
             var attributeList = [];
@@ -118,23 +209,89 @@
 
             attributeList.push(attributeEmail)
 
-            userPool.signUp(this.registerUserName, this.registerPassword, attributeList, null, function(err,result) {
+            userPool.signUp(this.registerUserName, this.registerPassword, attributeList, null, (err,result) => {
                 if (err) {
-                    console.log("Registration failed: ", err)
-                    alert(err.message || JSON.stringify(err));
+                    this.registerError = err.message.split(';').length < 2 ? err.message : "Registration Failed."
                     return;
                 }
-                console.log("result: " + JSON.stringify(result))
+                this.registerError = ""
+                this.registrationSuccessMsg = `Registration Successful! A confirmation email has been sent to ${result.codeDeliveryDetails.Destination}. Please confirm the email before signing in.`
+                this.showSignIn()
                 var cognitoUser = result.user;
                 console.log('user name is ' + cognitoUser.getUsername());
             });
+        },
+
+
+        resendConfirmation: function() {
+            var userData = {
+                Username: this.userName,
+                Pool: userPool,
+            };
+
+            var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            cognitoUser.resendConfirmationCode((err, result) => {
+                if (err) {
+                    alert(err.message || JSON.stringify(err));
+                    return;
+                }
+                console.log('resending confirmation call result: ' + result);
+            });
+
+        },
+
+        resetPassword: function() {
+            var userData = {
+                Username: this.userName,
+                Pool: userPool,
+            };
+
+            var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            cognitoUser.forgotPassword(
+                {
+                    // sent password reset code
+                    onSuccess: (result) => {
+                        this.destinationEmail = result.CodeDeliveryDetails.Destination // destination email
+                        this.showConfirmPasswordReset()
+                    },
+                    onFailure: () => {
+                        this.forgotPasswordError = "Please enter a valid Username or Email address."
+                    }
+                });
+
+        },
+        confirmResetPassword: function() {
+            if (this.newPassword != this.confirmNewPassword) {
+                this.changePasswordError = "Passwords do not match"
+                return
+            }
+            var userData = {
+                Username: this.userName,
+                Pool: userPool,
+            };
+
+            var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+            cognitoUser.confirmPassword(
+                this.verificationCode,
+                this.newPassword,
+                {
+                    // sent password reset code
+                    onSuccess: (result) => {
+                        console.log("Password Confirmed! " + JSON.stringify(result))
+                    },
+                    onFailure: (err) => {
+                        console.log("Password not confirmed! " + JSON.stringify(err))
+                    }
+                });
+
         }
+
+
 
 
     },
 
-    created: function() { // debugging the props
-        // console.log(this.logs)
+    created: function() {
 
     },
 
@@ -157,13 +314,24 @@
         align-items: center;
         margin: 0 auto;
         justify-content: center;
+        
     }
 
     form {
-        justify-content: center;
+        width: 100%;
+        max-width: 50vw;
         display: flex;
         flex-direction: column;
-        max-width: fit-content;
+        justify-content: center;
+        padding: 1em;
+        background-color: rgba(17, 17, 17, 0.609);
+        border-radius: 1em;
+    }
+
+    label {
+        display: flex;
+        justify-content: flex-start;
+        color: white;
     }
 
     .input {
@@ -201,8 +369,10 @@
         justify-content: flex-end;
     }
 
-    #signIn-error {
-        color: #d26a5c
+    #error {
+        color: #d26a5c;
+        word-wrap: break-word;
+        
     }
 
     .clickable-text {

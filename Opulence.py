@@ -40,6 +40,14 @@ class Opulence:
         data = self.dragon_shop.__dict__()
         return data
 
+    # def _turn_timer(self):
+    #     total_seconds = self.turn_timer
+    #     start_time = time.time()
+    #     while (time.time() - start_time) < total_seconds:
+    #         timer = datetime.timedelta(seconds=total_seconds)
+    #         time.time()
+    #         total_seconds-=1
+
     def start_game(self, sid):
         """
         - params sid: the sid of the person who started the game
@@ -53,13 +61,7 @@ class Opulence:
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
-    # def _turn_timer(self):
-    #     total_seconds = self.turn_timer
-    #     start_time = time.time()
-    #     while (time.time() - start_time) < total_seconds:
-    #         timer = datetime.timedelta(seconds=total_seconds)
-    #         time.time()
-    #         total_seconds-=1
+
 
     def add_player(self, sid: str, name: str=None):
         num_players = len(self.players)

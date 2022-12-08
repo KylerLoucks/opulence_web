@@ -2,7 +2,9 @@ import { reactive, readonly} from "vue"
 
 
 const state = reactive({
-  isAuthenticated: false
+  isAuthenticated: false,
+  sub: null,
+  userName: null
 })
 
 

@@ -495,8 +495,7 @@
       signOut() {
           var cognitoUser = userPool.getCurrentUser()
           if (cognitoUser != null) { 
-              cognitoUser.signOut(result => {
-                  console.log(result)
+              cognitoUser.signOut(() => {
                   this.AuthState.setAuthenticated(false)
             });
           }
@@ -615,16 +614,27 @@
 
     // before the DOM is mounted
     beforeMount: function() {
-      // Grab cognito user from local storage and check if they are authenticated
+      
+      // Grab cognito user from local storage
       var cognitoUser = userPool.getCurrentUser()
       console.log("current_user: ", userPool.getCurrentUser())
       if (cognitoUser != null) {
         
+        // check if user is authenticated
         cognitoUser.getSession((err, session) => {
           if (err) {
             alert(err.message || JSON.stringify(err))
           }
+          // user is valid
           this.AuthState.setAuthenticated(session.isValid())
+
+          cognitoUser.getUserAttributes((err, attributes) => {
+            if (err) {
+              console.log("Error when getting user attributes: ", err)
+            }
+            console.log("Attributes: ", attributes)
+            console.log(attributes[0].getValue())
+          })
         })
       }
     },
@@ -771,7 +781,6 @@
     // do things on first load of the DOM
     mounted: function() {
       this.pickRandomBackgroundOnDOMLoad()
-      
 
 
       // mobile touch events
