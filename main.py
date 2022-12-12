@@ -29,7 +29,7 @@ def client_connect():
     sid = str(request.sid)
     flask.session['sid'] = sid
     flask.session['gameID'] = None
-    flask.session['displayName'] = None
+    flask.session['displayName'] = ''
     emit('user-sid', sid)
     emit('list-games', games_list, broadcast=True)
     emit('Connection', 'Connected!') # Send 'Connection' data to the client
@@ -327,7 +327,7 @@ def start_game():
         gameID = str(flask.session['gameID'])
         sid = str(flask.session['sid'])
         opulence = games_dict[gameID]
-
+        
         if opulence.start_game(sid):
             games_list[gameID]['started'] = True
             emit('game-logs', opulence.game_logs.logs, room=gameID)

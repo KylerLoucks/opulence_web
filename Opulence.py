@@ -3,8 +3,10 @@ from Config import Config
 from game_objects import *
 from shop import *
 from game_logs import GameLogs
-# import datetime
-# import time
+import datetime
+import time
+from threading import Timer
+import threading
 
 
 class Opulence:
@@ -21,7 +23,7 @@ class Opulence:
         self.game_logs = GameLogs()
         self.game_started = False
         self.game_over = False
-        self.turn_timer = config.turn_timer
+        self.turn_timer = None
         self.tied_game = False
 
     def _get_game_data(self):
@@ -40,14 +42,6 @@ class Opulence:
         data = self.dragon_shop.__dict__()
         return data
 
-    # def _turn_timer(self):
-    #     total_seconds = self.turn_timer
-    #     start_time = time.time()
-    #     while (time.time() - start_time) < total_seconds:
-    #         timer = datetime.timedelta(seconds=total_seconds)
-    #         time.time()
-    #         total_seconds-=1
-
     def start_game(self, sid):
         """
         - params sid: the sid of the person who started the game
@@ -58,6 +52,11 @@ class Opulence:
             self.game_started = True
             sid2 = self.player_sids[self.turn] # the sid of the player whose turn it will be when the game starts
             self.game_logs.start_game_log(self.players[sid].display_name, self.players[sid2].display_name)
+
+            # Create a timer thread to run _next_turn() after x seconds
+            self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+            # Start the timer
+            self.turn_timer.start()
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
@@ -266,6 +265,7 @@ class Opulence:
         if player_left_during_turn:
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
+                self.turn_timer.cancel()
                 return
         
         # apply effects at the end of the turn
@@ -282,6 +282,7 @@ class Opulence:
             # check if the game should end
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
+                self.turn_timer.cancel()
                 return
 
         # cycle cards in the shop
@@ -289,6 +290,7 @@ class Opulence:
         self.runes_taken = 0
 
         print(f"_next_turn() called. Turn index was: {self.turn}")
+        print(f"GAME ID IS: {self.game_id}")
         # iterate the turn      
         # loop through all the players that were in the game when it started and iterate the turn until the turn index lands on a player who isn't dead.
         for i in range(0, len(self.player_sids)):
@@ -304,6 +306,10 @@ class Opulence:
         next_player= self.players[self.player_sids[self.turn]].display_name
         print(f"It's {next_player}'s turn")
         self.game_logs.next_turn_log(str(next_player))
+        # self.turn_timer.cancel()
+        self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+        self.turn_timer.start()
+        print(f"Active threads: {len(threading.enumerate())} ")
     
 
     def _get_living_players(self):
@@ -352,29 +358,29 @@ class Opulence:
 
 
 if __name__ == "__main__":
-    o = Opulence(Config())
-    o.add_player("player1")
-    o.add_player("player2")
-    o.add_player("player3")
-    o.add_player("player4")
+    games = {}
+    for i in range(0, 50):
+        o = Opulence(Config())
+        o.add_player("player1")
+        o.add_player("player2")
+        o.add_player("player3")
+        o.add_player("player4")
+        
+        o.start_game("player1")
+        print("player took a rune")
+        o.take_rune("player1", rune="FIRE")
+        print("Waiting.....")
+        # games[i] = o
+    print(games)
     # o.players["player1"].set_runes()
     # o._get_game_data()
     # o.players["player1"].add_dragon()
     # o._get_game_data()
     # o.game_logs.take_rune_log("1", rune.FIRE)
-    o.players['player1'].add_card()
-    o.players['player1'].vines = 1
-    o.players['player1'].burn = 1
-    o.play_card(0, 'player1')
-    
-    
-    o._next_turn(o.players["player1"])
-    o._next_turn(o.players["player2"])
-    o._next_turn(o.players["player3"])
+
     # o.players["player1"].isDead = True
-    o.remove_player("player4")
     # o._next_turn(o.players["player4"])
-    o._get_game_data()
+    # o._get_game_data()
     
 
     
