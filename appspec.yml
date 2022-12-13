@@ -7,6 +7,8 @@ files:
     destination: /home/ec2-user/public
   - source: ./card_types.py
     destination: /home/ec2-user
+  - source: ./.env
+    destination: /home/ec2-user
   - source: ./Config.py
     destination: /home/ec2-user
   - source: ./dragon_types.py
