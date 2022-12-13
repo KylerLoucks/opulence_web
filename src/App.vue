@@ -346,12 +346,9 @@
 
   import { userPool } from "./components/authenticate/UserPool"
 
-  import AuthState from "./components/authenticate/AuthState"
-
   import { socket } from "./websocket"
 
-  // const io = require('socket.io-client'); // socket io
-  // const AmazonCognitoIdentity = require('amazon-cognito-identity-js')
+  import AuthState from "./components/authenticate/AuthState"
   
   export default {
     name: 'App',
@@ -385,6 +382,8 @@
         
         
         AuthState,
+        socket,
+        
         shield_colors: [{"FIRE": "#dd221e"}, {"WATER":"#3f7ab6"}, {"DARK": "#200f34"}, {"WIND": "#b7b7b7"}, {"ARCANE": "#7332b7"}, {"EARTH": "#865b38"}, {"SOLAR": "#c9721f"}, {"NATURE":"#5ec234"}],
   
         gamesList: {"1": {"gameID": "1", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}},
@@ -400,7 +399,7 @@
         
         connectedMsg: 'Disconnected',
         // socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
-        socket,
+        
 
       
         current_game_card_shop: [{'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
@@ -467,18 +466,11 @@
         this.showHandModalIndex = index
         this.showHandModal = true
       },
+
+
       takeRune(element) {
         let data = element
         this.socket.emit('take-rune', data)
-              
-        // switch (type) {
-        //   case "fire":
-        //     user.runes.fire++
-        //     break;
-        //   default:
-        //     user.runes.fire++
-  
-        // }
       },
   
       // KEEP ME ALIVE AT ALL COSTS
@@ -538,8 +530,9 @@
       // rooms with socket io
       joinRoom: function(id) { // emits to the server with the roomId to join (only handled on server side)
         this.socket.emit('join-room', {'gameid': id})
-        //this.ingame = true
+        this.ingame = true
         this.current_room_id = id
+        this.gameStarted = this.gamesList[id].started
         console.log(`"joined room id: ${id}"`)
       },
       leaveRoom: function() { // emits to the server with the roomId to leave (only handled on server side)
