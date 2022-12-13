@@ -110,11 +110,10 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          pip3.9 install requests
           aws s3 cp s3://${OpulenceS3Storage}/ /home/ec2-user --recursive
           cd /home/ec2-user/src
           # replace first occurance of ws://localhost:5000 with https websocket server
-          sed -i 's,ws://localhost:5000,wss://playopulence.com,1' App.vue
+          sed -i 's,ws://localhost:5000,wss://playopulence.com,1' websocket.js
           cd /home/ec2-user
           npm run build
           sed -i s/ADDRESS/_/1 nginx.conf
