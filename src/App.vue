@@ -6,15 +6,18 @@
       <img src="./assets/OPULENCE.png" class="opulence-banner" draggable="false"/>
     </div>
     
-    <Authenticate></Authenticate>
-    <!-- <div v-if="!ingame && !playing && !tutorial" class="play-container" >
+    <Authenticate v-if="!AuthState.state.isAuthenticated && !AuthState.state.skipAuthentication"></Authenticate>
+
+ 
+    <button v-if="AuthState.state.isAuthenticated && !ingame" class="create-game-button" v-on:click="signOut()">Sign Out</button>
+    
+    
+    <div v-if="!AuthState.state.isAuthenticated && AuthState.state.skipAuthentication && !playing" class="play-container" >
       <input class="input-name" v-model="userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
       
-      
-      
       <button  class="create-game-button"  v-on:click="play">Play</button>
-      <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button>
-    </div> -->
+      <!-- <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button> -->
+    </div>
 
     <div v-if="!ingame && !playing && tutorial" class="tutorial-container" >
     
@@ -22,13 +25,13 @@
     </div>
   
     
-    <div v-if="!ingame && playing" class="games-parent-container" >
+    <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
       <h2>Select a game from the list or create one</h2>
         <div class="games-container">
           <Games class='games' v-for="game in gamesList" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
         </div>
     </div>
-    <button v-if="!ingame && playing" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
+    <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
     
     <transition name="config-fade" appear>
       <div class="game-config-overlay" v-if="showGameConfigModal" @click="showGameConfigModal = false"></div>
@@ -340,14 +343,15 @@
   import Sidebar from "./components/sidebar/Sidebar.vue";
   import ClientSidePlayerCards from "./components/ClientSidePlayerCards.vue";
   import Authenticate from "./components/authenticate/Authenticate.vue"
-  
-  // import cognito = require('amazon-cognito-idenity-js')
-  const poolData = {UserPoolId: "us-east-1_oE6xNLqlz", // cognito user pool id
-                    ClientId: "6v0nmvata8lpjt8crpj5jc69bf", // cognito client id
-                  };
 
-  const io = require('socket.io-client'); // socket io
-  const AmazonCognitoIdentity = require('amazon-cognito-identity-js')
+  import { userPool } from "./components/authenticate/UserPool"
+
+  import AuthState from "./components/authenticate/AuthState"
+
+  import { socket } from "./websocket"
+
+  // const io = require('socket.io-client'); // socket io
+  // const AmazonCognitoIdentity = require('amazon-cognito-identity-js')
   
   export default {
     name: 'App',
@@ -364,14 +368,11 @@
     Authenticate
 },
     setup() {
-      // document.title = "Opulence"
-      
       // const hp = ref(0);
       // setInterval(() => (hp.value = Math.floor(Math.random() * 35)),2000);
       
       // return {hp}
-
-      return {touch: {startX: 0, endX: 0}}
+      
     },
     data: function() {
       return {
@@ -380,17 +381,13 @@
         death_icon: "death.png",
         shield_icon: "shield.png",
         shield_color: "#dd221e",
-  
 
         
-
-
+        
+        AuthState,
         shield_colors: [{"FIRE": "#dd221e"}, {"WATER":"#3f7ab6"}, {"DARK": "#200f34"}, {"WIND": "#b7b7b7"}, {"ARCANE": "#7332b7"}, {"EARTH": "#865b38"}, {"SOLAR": "#c9721f"}, {"NATURE":"#5ec234"}],
   
         gamesList: {"1": {"gameID": "1", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}},
-        
-        
-        
   
         // cards: {"1":{"runeVal":5,"spellVal":3,"runeType":"fire","spellType":1,"cost":{"wind":2,"fire":5,"earth":10,"water":2,"nature":3,"solar":8}},"2":{"runeVal":7,"spellVal":6,"runeType":"solar","spellType":2,"cost":{"wind":2,"solar":7,"water":3}},"3":{"runeVal":9,"spellVal":10,"runeType":"water","spellType":1,"cost":{"wind":2,"nature":10}},"4":{"runeVal":8,"spellVal":8,"runeType":"arcane","spellType":2,"cost":{"arcane":8,"solar":5,"water":3}},"5":{"runeVal":10,"spellVal":4,"runeType":"nature","spellType":1,"cost":{"earth":10,"water":3,"solar":5,"dark":6}},"6":{"runeVal":3,"spellVal":1,"runeType":"wind","spellType":1,"cost":{"dark":8,"water":11}},"7":{"runeVal":6,"spellVal":9,"runeType":"wind","spellType":1,"cost":{"wind":2}},"8":{"runeVal":4,"spellVal":5,"runeType":"wind","spellType":1,"cost":{"dark":10,"solar":5,"fire":11,"wind":2}}},
         // dragons: {"Deep-sea Dragon": {"cost": {"water": 20,"dark": 20},"icon": "Deep-sea_Dragon.png","shield": 8,"damage": 2}, "Nova Dragon": {"cost": {"fire": 20,"solar": 20},"icon": "Nova_Dragon.png","shield": 8,"damage": 2}, "Swamp Dragon": {"cost": {"water": 20,"nature": 20},"icon": "Swamp_Dragon.png","shield": 8,"damage": 2},"Cloud Dragon": {"cost": {"water": 20,"wind": 20},"icon": "Cloud_Dragon.png","shield": 8,"damage": 2},},
@@ -402,8 +399,8 @@
         isTurn: false,
         
         connectedMsg: 'Disconnected',
-        socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
-
+        // socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
+        socket,
 
       
         current_game_card_shop: [{'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
@@ -420,7 +417,7 @@
         attacking: false,
 
 
-
+        skipLogin: false,
         crafting: true,
         buyingDragonCards: false,
         buyingShopCards: false,
@@ -492,6 +489,16 @@
       updateShield(color, icon) {
         this.shield_color = color
         this.shield_icon = icon
+      },
+
+      // sign out of cognito
+      signOut() {
+          var cognitoUser = userPool.getCurrentUser()
+          if (cognitoUser != null) { 
+              cognitoUser.signOut(() => {
+                  this.AuthState.setAuthenticated(false)
+            });
+          }
       },
   
       play() {
@@ -604,15 +611,46 @@
   
     },
   
-  
+
+    // before the DOM is mounted
+    beforeMount: function() {
+
+      // Grab cognito user from local storage
+      var cognitoUser = userPool.getCurrentUser()
+      console.log("current_user: ", userPool.getCurrentUser())
+      if (cognitoUser != null) {
+        
+        // check if user is authenticated
+        cognitoUser.getSession((err, session) => {
+          if (err) {
+            alert(err.message || JSON.stringify(err))
+          }
+          // user is valid
+          this.AuthState.setAuthenticated(session.isValid())
+
+          cognitoUser.getUserAttributes((err, attributes) => {
+            if (err) {
+              console.log("Error when getting user attributes: ", err)
+            }
+            let sub = attributes[0].getValue()
+            let username = cognitoUser.getUsername()
+            // console.log("Attributes: ", attributes)
+            this.socket.emit('auth', {'sub': sub, 'username': username})
+          })
+        })
+      }
+    },
+
+    
     created: function() {
       // window.setInterval(function() {
       //     var elem = document.getElementsByClassName('chat-log-container');
       //     elem.scrollTop = elem.scrollHeight;
       // }, 2000);
       
-      const pool = new AmazonCognitoIdentity.CognitoUserPool(poolData)
-      console.log(pool)
+
+      
+
 
       this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server
         this.connectedMsg = msg
@@ -658,10 +696,10 @@
       // receive string of the element that killed a player | play the relevant sound effect
       this.socket.on('game-over', (res) => {
         var audio = new Audio(require('./assets/mp3s/victory.mp3'))
-        var audio_tie_game = new Audio(require('./assets/mp3s/reeverb.mp3'))
+        // var audio_tie_game = new Audio(require('./assets/mp3s/reeverb.mp3'))
         console.log('Player won the game: ' + res)
         if (res == null) {
-          audio_tie_game.play()
+          audio.play()
         } else audio.play()
        
 
@@ -724,7 +762,6 @@
   
       this.socket.on('game-logs', (res) => {
         this.logs = res
-        console.log('Logs now equal: ' + this.logs)
       });
   
       // grab dict of user and card shop game data from server
@@ -745,8 +782,7 @@
     // do things on first load of the DOM
     mounted: function() {
       this.pickRandomBackgroundOnDOMLoad()
-      
-      
+
 
       // mobile touch events
       // this.$el.addEventListener('touchstart', () => {
