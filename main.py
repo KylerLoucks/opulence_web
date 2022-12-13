@@ -21,7 +21,7 @@ games_list={} # emitted to clients
 # @app.route('/')
 # def index():
 #     return flask.render_template('index.html')
-
+authenticated_users = {}
 
 # built-in 'connect' event for socket io which gets called every time a user loads the webpage
 @socketio.on('connect')
@@ -36,43 +36,54 @@ def client_connect():
     
     log('client loaded the webpage: ' + str(sid))
 
+@socketio.on('auth')
+def authenticate(data):
+    sub = data.get('sub')
+    user_name = data.get('username')
+    print("user was authenticated: ", data)
+    if sub != None:
+        flask.session['sub'] = sub
+        flask.session['displayName'] = user_name
 
+        if authenticated_users.get(sub) == None:
+            authenticated_users[sub] = flask.session['sid']
+        emit('user-sid', authenticated_users[sub])
 
 # # built-in 'disconnect' event for socket io which gets called every time a user refreshes/closes the browser tab
 @socketio.on('disconnect')
 def on_client_disconnect():
-    sid = str(flask.session['sid'])
-    gameID = str(flask.session['gameID'])
-    name = flask.session['displayName']
-    # if the player isn't in a game when they disconnect, return
-    if gameID == 'None':
-        return
-    opulence = games_dict[gameID]
-    log(f"Player is Disconnecting....: {name}")
-    if opulence.remove_player(sid, name, disconnected=True):
-        print(f"Player Disconnected: {name}")
-        leave_room(gameID) 
-        flask.session['gameID'] = None
-        # remove the game if nobody is in it
-        if len(opulence.players) <= 0:
-            del games_list[gameID]
-            del games_dict[gameID]
-            emit('list-games', games_list, broadcast=True)
-        elif len(opulence.players) > 0:
-            emit('list-games', games_list, broadcast=True)
-            emit('game-logs', opulence.game_logs.logs, room=gameID)
-            emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
-            # if the game is started, emit the next persons turn. It could have been the turn of the person who left
-            if opulence.game_started and not opulence.game_over: 
-                emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
-
-    # logMsg = 'User: {} deleted their system32 folder'.format(str(flask.session['sid']))
+    # if the user isn't an authenticated user, remove them from the game
+    if flask.session.get('sub') == None:
+        sid = str(flask.session['sid'])
+        gameID = str(flask.session['gameID'])
+        name = flask.session['displayName']
+        # if the player isn't in a game when they disconnect, return
+        if gameID == 'None':
+            return
+        opulence = games_dict[gameID]
+        log(f"Player is Disconnecting....: {name}")
+        if opulence.remove_player(sid, name, disconnected=True):
+            print(f"Player Disconnected: {name}")
+            leave_room(gameID) 
+            flask.session['gameID'] = None
+            # remove the game if nobody is in it
+            if len(opulence.players) <= 0:
+                del games_list[gameID]
+                del games_dict[gameID]
+                emit('list-games', games_list, broadcast=True)
+            elif len(opulence.players) > 0:
+                emit('list-games', games_list, broadcast=True)
+                emit('game-logs', opulence.game_logs.logs, room=gameID)
+                emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
+                # if the game is started, emit the next persons turn. It could have been the turn of the person who left
+                if opulence.game_started and not opulence.game_over: 
+                    emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
 
 # emit to the clients when a user selects an attack card they want to play
 @socketio.on('attack-card-selected')
 def attack_card_selected(data):
     gameID = str(flask.session['gameID'])
-    sid = str(flask.session['sid'])
+    sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
     opulence = games_dict[gameID]
 
     # make sure the button only disapears if it's the turn of the player that clicks the attack button 
@@ -88,7 +99,7 @@ def attack_card_selected(data):
 # handle when the card shop, dragon shop, and users 'hand' buttons get pressed
 @socketio.on('shop-buttons-pressed')
 def shop_button_pressed(data):
-    sid = str(flask.session['sid'])
+    sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
     gameID = str(flask.session['gameID'])
     opulence = games_dict[gameID]
 
@@ -115,7 +126,7 @@ def shop_button_pressed(data):
 @socketio.on('take-rune')
 def take_rune(data):
     try:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         
         opulence = games_dict[gameID]
@@ -143,11 +154,11 @@ def take_rune(data):
 @socketio.on('play-card')
 def play_card(data):
     try:
-        sid1= str(flask.session['sid'])
+        sid1 = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         if data.get('attackedPlayer'):
-            sid2= str(data['attackedPlayer'])
+            sid2 = str(data['attackedPlayer'])
         else:
-            sid2=None
+            sid2 = None
         card_idx = data.get('index', 0)
         gameID = str(flask.session['gameID'])
         
@@ -192,7 +203,7 @@ def play_card(data):
 @socketio.on('buy-card')
 def buy_card(data):
     try:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         
         opulence = games_dict[gameID]
@@ -219,7 +230,7 @@ def buy_card(data):
 @socketio.on('craft-card')
 def craft_card(data):
     try:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         
         element1 = data['element1']
@@ -247,7 +258,7 @@ def craft_card(data):
 @socketio.on('buy-dragon')
 def buy_dragon(data):
     try:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         
         opulence = games_dict[gameID]
@@ -294,7 +305,7 @@ def create_game(data):
         global gameCounter
         gameCounter+=1
         gameID = str(gameCounter)
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
         opulence = Opulence(
             Config(max_players=max_players,
@@ -325,7 +336,7 @@ def create_game(data):
 def start_game():
     try:
         gameID = str(flask.session['gameID'])
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         opulence = games_dict[gameID]
         
         if opulence.start_game(sid):
@@ -343,7 +354,7 @@ def start_game():
 def on_join(data):
     try:
         gameID = str(data['gameid'])
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
 
         opulence = games_dict[gameID]
@@ -357,6 +368,7 @@ def on_join(data):
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
+            emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
 
         elif opulence.add_player(sid, name):
             log(f"added {name} to game")
@@ -375,7 +387,7 @@ def on_join(data):
 @socketio.on('leave-room')
 def on_leave():
     try:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         name = flask.session['displayName']
 

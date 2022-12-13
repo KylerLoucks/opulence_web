@@ -54,9 +54,9 @@ class Opulence:
             self.game_logs.start_game_log(self.players[sid].display_name, self.players[sid2].display_name)
 
             # Create a timer thread to run _next_turn() after x seconds
-            self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+            # self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
             # Start the timer
-            self.turn_timer.start()
+            # self.turn_timer.start()
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
@@ -265,7 +265,7 @@ class Opulence:
         if player_left_during_turn:
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
-                self.turn_timer.cancel()
+                # self.turn_timer.cancel()
                 return
         
         # apply effects at the end of the turn
@@ -282,7 +282,7 @@ class Opulence:
             # check if the game should end
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
-                self.turn_timer.cancel()
+                # self.turn_timer.cancel()
                 return
 
         # cycle cards in the shop
@@ -290,7 +290,6 @@ class Opulence:
         self.runes_taken = 0
 
         print(f"_next_turn() called. Turn index was: {self.turn}")
-        print(f"GAME ID IS: {self.game_id}")
         # iterate the turn      
         # loop through all the players that were in the game when it started and iterate the turn until the turn index lands on a player who isn't dead.
         for i in range(0, len(self.player_sids)):
@@ -307,8 +306,8 @@ class Opulence:
         print(f"It's {next_player}'s turn")
         self.game_logs.next_turn_log(str(next_player))
         # self.turn_timer.cancel()
-        self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
-        self.turn_timer.start()
+        # self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+        # self.turn_timer.start()
         print(f"Active threads: {len(threading.enumerate())} ")
     
 

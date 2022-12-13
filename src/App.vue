@@ -6,19 +6,18 @@
       <img src="./assets/OPULENCE.png" class="opulence-banner" draggable="false"/>
     </div>
     
-    <Authenticate v-if="!AuthState.state.isAuthenticated"></Authenticate>
-    {{AuthState.state.isAuthenticated}}
+    <Authenticate v-if="!AuthState.state.isAuthenticated && !AuthState.state.skipAuthentication"></Authenticate>
 
  
-    <button v-if="AuthState.state.isAuthenticated" class="create-game-button" v-on:click="signOut()">Sign Out</button>
-    <!-- <div v-if="!ingame && !playing && !tutorial" class="play-container" >
+    <button v-if="AuthState.state.isAuthenticated && !ingame" class="create-game-button" v-on:click="signOut()">Sign Out</button>
+    
+    
+    <div v-if="!AuthState.state.isAuthenticated && AuthState.state.skipAuthentication && !playing" class="play-container" >
       <input class="input-name" v-model="userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
       
-      
-      
       <button  class="create-game-button"  v-on:click="play">Play</button>
-      <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button>
-    </div> -->
+      <!-- <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button> -->
+    </div>
 
     <div v-if="!ingame && !playing && tutorial" class="tutorial-container" >
     
@@ -26,13 +25,13 @@
     </div>
   
     
-    <div v-if="(!ingame && AuthState.state.isAuthenticated)" class="games-parent-container" >
+    <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
       <h2>Select a game from the list or create one</h2>
         <div class="games-container">
           <Games class='games' v-for="game in gamesList" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
         </div>
     </div>
-    <button v-if="!ingame && AuthState.state.isAuthenticated" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
+    <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
     
     <transition name="config-fade" appear>
       <div class="game-config-overlay" v-if="showGameConfigModal" @click="showGameConfigModal = false"></div>
@@ -345,12 +344,13 @@
   import ClientSidePlayerCards from "./components/ClientSidePlayerCards.vue";
   import Authenticate from "./components/authenticate/Authenticate.vue"
 
-  import {userPool} from "./components/authenticate/UserPool"
+  import { userPool } from "./components/authenticate/UserPool"
 
   import AuthState from "./components/authenticate/AuthState"
 
+  import { socket } from "./websocket"
 
-  const io = require('socket.io-client'); // socket io
+  // const io = require('socket.io-client'); // socket io
   // const AmazonCognitoIdentity = require('amazon-cognito-identity-js')
   
   export default {
@@ -399,8 +399,8 @@
         isTurn: false,
         
         connectedMsg: 'Disconnected',
-        socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
-
+        // socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
+        socket,
 
       
         current_game_card_shop: [{'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
@@ -417,7 +417,7 @@
         attacking: false,
 
 
-
+        skipLogin: false,
         crafting: true,
         buyingDragonCards: false,
         buyingShopCards: false,
@@ -614,7 +614,7 @@
 
     // before the DOM is mounted
     beforeMount: function() {
-      
+
       // Grab cognito user from local storage
       var cognitoUser = userPool.getCurrentUser()
       console.log("current_user: ", userPool.getCurrentUser())
@@ -632,8 +632,10 @@
             if (err) {
               console.log("Error when getting user attributes: ", err)
             }
-            console.log("Attributes: ", attributes)
-            console.log(attributes[0].getValue())
+            let sub = attributes[0].getValue()
+            let username = cognitoUser.getUsername()
+            // console.log("Attributes: ", attributes)
+            this.socket.emit('auth', {'sub': sub, 'username': username})
           })
         })
       }
@@ -760,7 +762,6 @@
   
       this.socket.on('game-logs', (res) => {
         this.logs = res
-        console.log('Logs now equal: ' + this.logs)
       });
   
       // grab dict of user and card shop game data from server

@@ -12,7 +12,7 @@
             <button class="confirm-input-btn">Sign In</button>
             
             <div class="lower-text-container">
-                <a>Need an account? <span class="clickable-text" v-on:click="showRegistration()">Sign Up</span></a>
+                <a>Need an account? <span class="clickable-text" v-on:click="showRegistration()">Sign Up</span> | or <span class="clickable-text" v-on:click="AuthState.skipAuth(true)">Skip Authentication</span></a>
             </div>
         </form>
     </div>
@@ -28,7 +28,7 @@
             <h5 v-if="registerError" id="error">{{registerError}}</h5>
             <button class="confirm-input-btn">Sign Up</button>
             <div class="lower-text-container">
-                <a>Already have an account? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span></a>
+                <a>Already have an account? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span> | or <span class="clickable-text" v-on:click="AuthState.skipAuth(true)">Skip Authentication</span></a>
             </div>
         </form>
     </div>
@@ -70,6 +70,7 @@
   
 <script>
     import { userPool } from './UserPool';
+    import { socket } from '@/websocket';
     import AuthState from './AuthState';
     const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
@@ -109,7 +110,8 @@
 
 
 
-            AuthState
+            AuthState,
+            socket
         }
         
     },
@@ -170,8 +172,12 @@
                 {
                     // login was successful
                     onSuccess: (result) => {
-                        console.log("onSuccess: ", result)
+                        // console.log("onSuccess: ", result)
                         this.AuthState.setAuthenticated(true)
+
+                        let sub = result.getIdToken().decodePayload()['sub']
+                        let username = result.getIdToken().decodePayload()['cognito:username']
+                        this.socket.emit('auth', {'sub': sub, 'username': username})
                     },
                     // login failed
                     onFailure: (err) => {
