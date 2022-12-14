@@ -1,5 +1,7 @@
 <template>
   <div id="app">
+    <PageLoader></PageLoader>
+
     <span id="mobile-hamburger" class="material-icons">menu</span>
 
     <div v-if="!ingame && !tutorial" class="opulence-banner-container">
@@ -343,27 +345,30 @@
   import Sidebar from "./components/sidebar/Sidebar.vue";
   import ClientSidePlayerCards from "./components/ClientSidePlayerCards.vue";
   import Authenticate from "./components/authenticate/Authenticate.vue"
+  import PageLoader from "./components/PageLoader.vue";
 
   import { userPool } from "./components/authenticate/UserPool"
 
   import { socket } from "./websocket"
 
   import AuthState from "./components/authenticate/AuthState"
+
   
   export default {
     name: 'App',
     components: {
-    HpBar,
-    ShieldBar,
-    Games,
-    LegendaryShopCards,
-    DragonCards,
-    Crafting,
-    PlayerCards,
-    Sidebar,
-    ClientSidePlayerCards,
-    Authenticate
-},
+      HpBar,
+      ShieldBar,
+      Games,
+      LegendaryShopCards,
+      DragonCards,
+      Crafting,
+      PlayerCards,
+      Sidebar,
+      ClientSidePlayerCards,
+      Authenticate,
+      PageLoader
+    },
     setup() {
       // const hp = ref(0);
       // setInterval(() => (hp.value = Math.floor(Math.random() * 35)),2000);
