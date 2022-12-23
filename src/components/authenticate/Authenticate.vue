@@ -324,7 +324,7 @@
     }
 
     form {
-        width: 30em;
+        width: 35em;
         max-width: 80vw;
         display: flex;
         flex-direction: column;
@@ -349,6 +349,8 @@
         margin-bottom: .25em;
     }
 
+
+
     .confirm-input-btn {
         width: 100%;
         justify-content: center;
@@ -359,6 +361,11 @@
         cursor: pointer;
         border-style:hidden;
         margin-bottom: .25em;
+    }
+
+    .confirm-input-btn:hover{
+        
+        background: rgb(70, 117, 184);
     }
 
     .head-text {
