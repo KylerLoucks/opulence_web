@@ -324,8 +324,8 @@
     }
 
     form {
-        width: 100%;
-        max-width: 50vw;
+        width: 30em;
+        max-width: 80vw;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -342,9 +342,9 @@
 
     .input {
         background-color: rgba(205, 226, 255, 0.74);
-        border-radius: .5em;
+        border-radius: .25em;
         color: rgba(255, 255, 255, 0.8);
-        font-size: 2em;
+        font-size: 1.5em;
 
         margin-bottom: .25em;
     }
@@ -352,11 +352,12 @@
     .confirm-input-btn {
         width: 100%;
         justify-content: center;
-        background-color: rgb(47, 83, 134);
-        border-radius: .5em;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 2em;
-
+        background: rgb(47, 83, 134);
+        border-radius: .2em;
+        color: white;
+        font-size: 1.5em;
+        cursor: pointer;
+        border-style:hidden;
         margin-bottom: .25em;
     }
 
