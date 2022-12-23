@@ -52,9 +52,7 @@ def authenticate(data):
 # # built-in 'disconnect' event for socket io which gets called every time a user refreshes/closes the browser tab
 @socketio.on('disconnect')
 def on_client_disconnect():
-    # if the user isn't an authenticated user, remove them from the game
-    if flask.session.get('sub') == None:
-        sid = str(flask.session['sid'])
+        sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         name = flask.session['displayName']
         # if the player isn't in a game when they disconnect, return
@@ -62,22 +60,27 @@ def on_client_disconnect():
             return
         opulence = games_dict[gameID]
         log(f"Player is Disconnecting....: {name}")
-        if opulence.remove_player(sid, name, disconnected=True):
-            print(f"Player Disconnected: {name}")
-            leave_room(gameID) 
-            flask.session['gameID'] = None
-            # remove the game if nobody is in it
-            if len(opulence.players) <= 0:
-                del games_list[gameID]
-                del games_dict[gameID]
-                emit('list-games', games_list, broadcast=True)
-            elif len(opulence.players) > 0:
-                emit('list-games', games_list, broadcast=True)
-                emit('game-logs', opulence.game_logs.logs, room=gameID)
-                emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
-                # if the game is started, emit the next persons turn. It could have been the turn of the person who left
-                if opulence.game_started and not opulence.game_over: 
-                    emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+
+        # if the user isn't an authenticated user or the game is over, remove them from the game
+        if flask.session.get('sub') == None or opulence.game_over or not opulence.game_started:
+            if opulence.remove_player(sid, name, disconnected=True):
+                print(f"Player Disconnected: {name}")
+                leave_room(gameID) 
+                flask.session['gameID'] = None
+
+        # remove the game if nobody is in it
+        if len(opulence.players) <= 0:
+            del games_list[gameID]
+            del games_dict[gameID]
+            emit('list-games', games_list, broadcast=True)
+        elif len(opulence.players) > 0:
+            emit('list-games', games_list, broadcast=True)
+            emit('game-logs', opulence.game_logs.logs, room=gameID)
+            emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
+            # if the game is started, emit the next persons turn. It could have been the turn of the person who left
+            if opulence.game_started and not opulence.game_over: 
+                emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+
 
 # emit to the clients when a user selects an attack card they want to play
 @socketio.on('attack-card-selected')

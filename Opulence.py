@@ -24,6 +24,7 @@ class Opulence:
         self.game_started = False
         self.game_over = False
         self.turn_timer = None
+        self.time_elapsed_since_turn = 0
         self.tied_game = False
 
     def _get_game_data(self):
