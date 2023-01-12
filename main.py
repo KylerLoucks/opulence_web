@@ -418,7 +418,7 @@ if __name__ == '__main__':
     
     try:
         # app.debug = True
-        socketio.run(app, port=5000)
+        socketio.run(app, port=5001)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
