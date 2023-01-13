@@ -1,0 +1,35 @@
+version: "3"
+services:
+  # redis:
+  #   image: redis:latest
+  #   ports:
+  #     - 6379:6379
+  #   init: true
+
+  server1:
+    # name of the container image once it's built
+    image: backend:latest
+    # Build the container image using . 'root' location 
+    # of compose file for context
+    build:
+      context: . 
+      # dockerfile location
+      dockerfile: ./dockerfiles/backend/Dockerfile
+    environment:
+      - REDIS_HOST=mycluster.t7tiwz.ng.0001.use1.cache.amazonaws.com
+    ports:
+      - 5000:5000
+    # depends_on:
+    #   - redis
+    init: true
+  
+  server2:
+    image: backend:latest
+    environment:
+      - REDIS_HOST=mycluster.t7tiwz.ng.0001.use1.cache.amazonaws.com
+    ports:
+      - 5001:5000
+    depends_on:
+      # - redis
+      - server1
+    init: true

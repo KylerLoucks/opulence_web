@@ -1,3 +1,7 @@
+# Required for redis to work
+from gevent import monkey
+monkey.patch_all()
+
 import traceback
 import flask
 from flask import Flask, request
@@ -6,17 +10,28 @@ import json
 from Opulence import Opulence
 from Config import Config
 from GlobalMethods import log, error
+import os
+# from dynamodb_controller import DynamoDBController
 
+# Set url to use localhost if the environment variable isn't found
+redis_host = os.environ.get("REDIS_HOST", "localhost:6379/")
+redis_url = f"redis://{redis_host}"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*', message_queue=redis_url, logger=True)
 
 # NEW IMPLEMENTATION
+# db = DynamoDBController()
+# game = db.get_game(id="01GPEVC9Q9TCV8VKY2S8J5G0FF")
+# print(game.get("Item"))
+
 gameCounter = 0
 games_dict={} # local games, this doesn't get sent to the front-end
 
 games_list={} # emitted to clients
+
+
 
 # @app.route('/')
 # def index():
@@ -418,7 +433,9 @@ if __name__ == '__main__':
     
     try:
         # app.debug = True
-        socketio.run(app, port=5001)
+        print("Flask server listening on port 5000!")
+        # Set host="0.0.0.0" to be able to connect to docker container running this app externally
+        socketio.run(app, debug=False, host="0.0.0.0", port=5000)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
