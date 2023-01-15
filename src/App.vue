@@ -18,6 +18,11 @@
       <input class="input-name" v-model="userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
       
       <button  class="create-game-button"  v-on:click="play">Play</button>
+      
+      <!-- REDIS TEST -->
+      <input class="input-name" v-model="redisData" type="text" placeholder="Enter Redis Data" maxlength="20" pattern="[A-z0-9\s]">
+      <button  class="create-game-button"  v-on:click="emitRedisTest()">Test Data</button>
+      <h2 class="gameid-text">Redis Test Data: {{redisOtherUserData}}</h2>
       <!-- <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button> -->
     </div>
 
@@ -403,6 +408,8 @@
         isTurn: false,
         
         connectedMsg: 'Disconnected',
+        redisData: "",
+        redisOtherUserData: "",
         // socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
         
 
@@ -471,7 +478,14 @@
         this.showHandModalIndex = index
         this.showHandModal = true
       },
+      
 
+      emitRedisTest() {
+        let data = this.redisData
+        this.redisData = ""
+        this.socket.emit('redis-test', data)
+
+      },
 
       takeRune(element) {
         let data = element
@@ -647,7 +661,10 @@
       // }, 2000);
       
 
-      
+      this.socket.on('redis-test', (msg) => {
+        this.redisOtherUserData = msg
+        console.log(this.redisOtherUserData)
+      });
 
 
       this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server

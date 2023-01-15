@@ -19,6 +19,9 @@ redis_url = f"redis://{redis_host}"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
+
+# Logger= True to show emit logs
+# message_queue=redis_url,
 socketio = SocketIO(app, cors_allowed_origins='*', message_queue=redis_url, logger=True)
 
 # NEW IMPLEMENTATION
@@ -37,6 +40,12 @@ games_list={} # emitted to clients
 # def index():
 #     return flask.render_template('index.html')
 authenticated_users = {}
+
+@socketio.on("redis-test")
+def redis_test(data):
+    print(f"Retrieved redis test data: {data}")
+    join_room("redis")
+    emit("redis-test", data, room="redis")
 
 # built-in 'connect' event for socket io which gets called every time a user loads the webpage
 @socketio.on('connect')
@@ -434,8 +443,8 @@ if __name__ == '__main__':
     try:
         # app.debug = True
         print("Flask server listening on port 5000!")
-        # Set host="0.0.0.0" to be able to connect to docker container running this app externally
-        socketio.run(app, debug=False, host="0.0.0.0", port=5000)
+        # Set host="0.0.0.0" to be able to connect to docker container running this app externally (make the server externally visible). Default is 127.0.0.1
+        socketio.run(app, host="0.0.0.0", port=5000)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
