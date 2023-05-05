@@ -1,0 +1,45 @@
+Resources:
+
+  userPool:
+   Type : AWS::Cognito::UserPool
+   Properties:
+    UserPoolName: OpulenceUserPool
+    AccountRecoverySetting: 
+      RecoveryMechanisms: 
+        - Name: verified_email  # Recovery only by email
+          Priority: 1
+    
+    # Allow sign-in with either username or email
+    AliasAttributes: 
+      - email
+      - preferred_username
+    
+    # Password Policy for user sign-in
+    Policies: 
+      PasswordPolicy: 
+        MinimumLength: 6
+        RequireLowercase: false
+        RequireNumbers: false
+        RequireSymbols: false
+        RequireUppercase: false
+        TemporaryPasswordValidityDays: 7
+    UsernameConfiguration: 
+      CaseSensitive: false # Username sign-in is not case sensitive
+    MfaConfiguration: "OFF"
+
+    # Lambda functions for e.g. post auth
+    # LambdaConfig: 
+    #   LambdaConfig
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub website
+      GenerateSecret: false
+      UserPoolId: !Ref userPool
+      CallbackURLs:
+        - http://localhost:8080
+      LogoutURLs:
+        - http://localhost:8080
+      PreventUserExistenceErrors: ENABLED  # Prevent saying user not found if password was incorrect. Instead, always say password was invalid.
+
