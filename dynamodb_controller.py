@@ -2,6 +2,7 @@ import boto3
 import json
 import time
 from datetime import datetime
+import pprint
 
 # Unique ID with a sortable time prefix
 from ulid import ULID
@@ -9,7 +10,7 @@ from ulid import ULID
 class DynamoDBController:
     def __init__(self):
 
-        self.dynamodb = boto3.resource('dynamodb')
+        self.dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
 
         self.table = self.dynamodb.Table("testdatapksk")
 
@@ -111,6 +112,10 @@ class DynamoDBController:
         # games = [Game(item) for item in resp['Items']]
 
         return resp
+
+controller = DynamoDBController()
+data = controller.fetch_game_and_users(game_id="01GPEV315ASJQK3PRMAW94XCQG")
+pprint.pprint(data)
 
 
 # games = find_Joinable_games(limit=10)
