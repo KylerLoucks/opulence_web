@@ -27,7 +27,7 @@ class Opulence:
         self.tied_game = False
 
     # Update the game state in DynamoDB
-    def _save_state(self, players):
+    def _save_state(self):
         transact_items=[
             {
                 "Update": {
@@ -87,8 +87,8 @@ class Opulence:
                             ":vines": { "N": player[id].vines },
                             ":burn": { "N": player[id].burn },
                             ":display_name": { "S": player[id].display_name },
-                            ":dead": { "B": player[id].isDead },
-                            ":shield": { "M": player[id].shield }, # change this
+                            ":dead": { "BOOL": player[id].isDead },
+                            ":shield": { "M": player[id].shield.__dict__() },
                         },
                     }
                 }
