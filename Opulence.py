@@ -53,7 +53,7 @@ class Opulence:
             }
         ]
 
-        for player, id in self.players.items():
+        for id, player in self.players.items():
             transact_items.append(
                 {
                     "Update": {
