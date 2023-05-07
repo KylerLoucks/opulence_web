@@ -175,10 +175,6 @@ class CardShop(Shop):
             dicify_card_obj = card['card'].__dict__()
             cards.append({'card': dicify_card_obj, 'cost': card['cost']})
         
-        # cards = deepcopy(self.items) #deepcopy
-        # for index, card in enumerate(cards):
-        #     cards[index]['card'] = card['card'].__dict__()
-        
         return {
             "cards": cards,
         }

@@ -26,6 +26,78 @@ class Opulence:
         self.turn_timer = None
         self.tied_game = False
 
+    # Update the game state in DynamoDB
+    def _save_state(self, players):
+        transact_items=[
+            {
+                "Update": {
+                    "TableName": "battle-royale",
+                    "Key": {
+                        "PK": { f"GAME#{self.game_id}" },
+                        "SK": { f"GAME#{self.game_id}" },
+                    },
+                    "UpdateExpression": "SET #started = :started, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
+                    "ExpressionAttributeNames": {
+                        "#started": "started",
+                        "#crd_shop": "card_shop",
+                        "#drg_shop": "dragon_shop",
+
+                    },
+                    "ExpressionAttributeValues": {
+                        ":started": { "S": self.game_started },
+                        ":crd_shop": { "L": self.card_shop.__dict__() },
+                        ":drg_shop": { "L": self.dragon_shop.__dict__() }
+                    },
+                    "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
+                }
+            }
+        ]
+
+        for player, id in self.players.items():
+            transact_items.append(
+                {
+                    "Update": {
+                        "TableName": "battle-royale",
+                        "Key": {
+                            "PK": { f"GAME#{self.game_id}" },
+                            "SK": { f"USER#{player[id]}" },
+                        },
+                        "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
+                                            #cards = :cards, #dragons = :dragons, #vines = :vines, \
+                                            #burn = :burn, #display_name = :display_name, #dead = :dead, \
+                                            #shield = :shield",
+                        "ExpressionAttributeNames": {
+                            "#hp": "hp",
+                            "#runes": "runes",
+                            "#affinities": "affinities",
+                            "#cards": "cards",
+                            "#dragons": "dragons",
+                            "#vines": "vines",
+                            "#burn": "burn",
+                            "#display_name": "display_name",
+                            "#dead": "is_dead",
+                            "#shield": "shield"
+                        },
+                        "ExpressionAttributeValues": {
+                            ":hp": { "N": player[id].hp },
+                            ":runes": { "M": player[id].runes },
+                            ":affinities": { "M": player[id].affinities },
+                            ":cards": { "L": player[id].cards },
+                            ":dragons": { "L": player[id].dragons },
+                            ":vines": { "N": player[id].vines },
+                            ":burn": { "N": player[id].burn },
+                            ":display_name": { "S": player[id].display_name },
+                            ":dead": { "B": player[id].isDead },
+                            ":shield": { "M": player[id].shield }, # change this
+                        },
+                    }
+                }
+            )
+
+        resp = dynamodb.transact_write_items(TransactItems=transact_items)
+        return resp
+
+
     def _get_game_data(self):
         users = []
         for player in self.players:
