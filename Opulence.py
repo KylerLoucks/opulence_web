@@ -39,12 +39,14 @@ class Opulence:
                     "UpdateExpression": "SET #started = :started, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
                     "ExpressionAttributeNames": {
                         "#started": "started",
+                        "#turn": "turn",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
 
                     },
                     "ExpressionAttributeValues": {
                         ":started": { "S": self.game_started },
+                        ":turn": { "N": self.turn },
                         ":crd_shop": { "L": self.card_shop.__dict__() },
                         ":drg_shop": { "L": self.dragon_shop.__dict__() }
                     },
@@ -93,8 +95,11 @@ class Opulence:
                     }
                 }
             )
-
-        resp = dynamodb.transact_write_items(TransactItems=transact_items)
+        try:
+            resp = dynamodb.transact_write_items(TransactItems=transact_items)
+        except Exception as e:
+            print("Failed to save game state")
+            return None
         return resp
 
 
