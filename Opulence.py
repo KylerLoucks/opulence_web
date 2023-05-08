@@ -36,17 +36,23 @@ class Opulence:
                         "PK": { f"GAME#{self.game_id}" },
                         "SK": { f"GAME#{self.game_id}" },
                     },
-                    "UpdateExpression": "SET #started = :started, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
+                    "UpdateExpression": "SET #started = :started, #runes_taken = :runes_taken #game_over = :game_over, #tied = :tied, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
                     "ExpressionAttributeNames": {
                         "#started": "started",
+                        "#game_over": "game_over",
+                        "#tied": "tied_game",
                         "#turn": "turn",
+                        "#runes_taken": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
 
                     },
                     "ExpressionAttributeValues": {
                         ":started": { "S": self.game_started },
+                        ":runes_taken": { "N": self.runes_taken },
+                        ":game_over": { "BOOL": self.game_over },
                         ":turn": { "N": self.turn },
+                        ":tied": { "BOOL": self.tied_game },
                         ":crd_shop": { "L": self.card_shop.__dict__() },
                         ":drg_shop": { "L": self.dragon_shop.__dict__() }
                     },
