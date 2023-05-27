@@ -7,10 +7,13 @@ import datetime
 import time
 from threading import Timer
 import threading
+import boto3
+import ulid
 
 
 class Opulence:
     def __init__(self, config: Config):
+        self.game_id = str(ulid.ULID())
         self.players = dict()
         self.player_sids = []
         self.player_names = []
@@ -26,49 +29,54 @@ class Opulence:
         self.turn_timer = None
         self.tied_game = False
 
+        self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
+        self.table_name = "testgamestate"
+
     # Update the game state in DynamoDB
     def _save_state(self):
         transact_items=[
             {
+                # Update Game record
                 "Update": {
-                    "TableName": "battle-royale",
+                    "TableName": self.table_name,
                     "Key": {
-                        "PK": { f"GAME#{self.game_id}" },
-                        "SK": { f"GAME#{self.game_id}" },
+                        "PK": { "S": f"GAME#{self.game_id}" },
+                        "SK": { "S": f"GAME#{self.game_id}" },
                     },
-                    "UpdateExpression": "SET #started = :started, #runes_taken = :runes_taken #game_over = :game_over, #tied = :tied, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
+                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
                     "ExpressionAttributeNames": {
                         "#started": "started",
-                        "#game_over": "game_over",
+                        "#go": "game_over",
                         "#tied": "tied_game",
                         "#turn": "turn",
-                        "#runes_taken": "runes_taken",
+                        "#rt": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
 
                     },
                     "ExpressionAttributeValues": {
-                        ":started": { "S": self.game_started },
-                        ":runes_taken": { "N": self.runes_taken },
+                        ":started": { "BOOL": self.game_started },
+                        ":runes_taken": { "N": str(self.runes_taken) },
                         ":game_over": { "BOOL": self.game_over },
-                        ":turn": { "N": self.turn },
+                        ":turn": { "N": str(self.turn) },
                         ":tied": { "BOOL": self.tied_game },
-                        ":crd_shop": { "L": self.card_shop.__dict__() },
-                        ":drg_shop": { "L": self.dragon_shop.__dict__() }
+                        ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
+                        ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) }
                     },
                     "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
                 }
             }
         ]
 
+        # For each player in the game, update their records
         for id, player in self.players.items():
             transact_items.append(
                 {
                     "Update": {
-                        "TableName": "battle-royale",
+                        "TableName": self.table_name,
                         "Key": {
-                            "PK": { f"GAME#{self.game_id}" },
-                            "SK": { f"USER#{player[id]}" },
+                            "PK": { "S": f"GAME#{self.game_id}" },
+                            "SK": { "S": f"USER#{player.sid}" },
                         },
                         "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
@@ -87,24 +95,24 @@ class Opulence:
                             "#shield": "shield"
                         },
                         "ExpressionAttributeValues": {
-                            ":hp": { "N": player[id].hp },
-                            ":runes": { "M": player[id].runes },
-                            ":affinities": { "M": player[id].affinities },
-                            ":cards": { "L": player[id].cards },
-                            ":dragons": { "L": player[id].dragons },
-                            ":vines": { "N": player[id].vines },
-                            ":burn": { "N": player[id].burn },
-                            ":display_name": { "S": player[id].display_name },
-                            ":dead": { "BOOL": player[id].isDead },
-                            ":shield": { "M": player[id].shield.__dict__() },
+                            ":hp": { "N": str(player.hp) },
+                            ":runes": { "S": json.dumps(player.runes) },
+                            ":affinities": { "S": json.dumps(player.affinities) },
+                            ":cards": { "S": json.dumps(player.cards) },
+                            ":dragons": { "S": json.dumps(player.dragons) },
+                            ":vines": { "N": str(player.vines) },
+                            ":burn": { "N": str(player.burn) },
+                            ":display_name": { "S": player.display_name },
+                            ":dead": { "BOOL": player.isDead },
+                            ":shield": { "S": json.dumps(player.shield.__dict__()) },
                         },
                     }
                 }
             )
         try:
-            resp = dynamodb.transact_write_items(TransactItems=transact_items)
+            resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
         except Exception as e:
-            print("Failed to save game state")
+            print("Failed to save game state", e)
             return None
         return resp
 
@@ -388,6 +396,11 @@ class Opulence:
         next_player= self.players[self.player_sids[self.turn]].display_name
         print(f"It's {next_player}'s turn")
         self.game_logs.next_turn_log(str(next_player))
+
+        # Save game state:
+        print(self._save_state())
+
+        # Restart the turn timer
         # self.turn_timer.cancel()
         # self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
         # self.turn_timer.start()
