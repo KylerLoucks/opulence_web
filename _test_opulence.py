@@ -29,12 +29,7 @@ def test_threading_turn_timer():
 
 def test_dynamodb_save_state():
     o = Opulence(Config())
-    o.add_player("player1")
-    for id, player in o.players.items():
-        print(id)
-        p = player
-        print(player)
-        
+    o.add_player("player1")      
     o.add_player("player2")
     o._next_turn(o.players["player2"])
 

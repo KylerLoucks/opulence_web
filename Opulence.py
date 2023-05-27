@@ -34,6 +34,11 @@ class Opulence:
 
     # Update the game state in DynamoDB
     def _save_state(self):
+        # Current time, splitting and removing the miliseconds
+        # start_time = str(datetime.now()).split(".")[0]
+
+        # unix epoch time format 5 min from now
+        time_to_live = str(time.time() + 5 * 60).split(".")[0]
         transact_items=[
             {
                 # Update Game record
@@ -43,7 +48,7 @@ class Opulence:
                         "PK": { "S": f"GAME#{self.game_id}" },
                         "SK": { "S": f"GAME#{self.game_id}" },
                     },
-                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, #drg_shop = :drg_shop",
+                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, #drg_shop = :drg_shop, #ttl = :ttl",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -52,6 +57,7 @@ class Opulence:
                         "#rt": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
+                        "#ttl": "TTL"
 
                     },
                     "ExpressionAttributeValues": {
@@ -61,7 +67,8 @@ class Opulence:
                         ":turn": { "N": str(self.turn) },
                         ":tied": { "BOOL": self.tied_game },
                         ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
-                        ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) }
+                        ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
+                        ":ttl": { "N": str(time_to_live) }
                     },
                     "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
                 }
@@ -81,7 +88,8 @@ class Opulence:
                         "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                             #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                            #shield = :shield",
+                                            #shield = :shield, \
+                                            #ttl = :ttl",
                         "ExpressionAttributeNames": {
                             "#hp": "hp",
                             "#runes": "runes",
@@ -92,7 +100,8 @@ class Opulence:
                             "#burn": "burn",
                             "#display_name": "display_name",
                             "#dead": "is_dead",
-                            "#shield": "shield"
+                            "#shield": "shield",
+                            "#ttl": "TTL"
                         },
                         "ExpressionAttributeValues": {
                             ":hp": { "N": str(player.hp) },
@@ -105,6 +114,7 @@ class Opulence:
                             ":display_name": { "S": player.display_name },
                             ":dead": { "BOOL": player.isDead },
                             ":shield": { "S": json.dumps(player.shield.__dict__()) },
+                            ":ttl": { "N": time_to_live}
                         },
                     }
                 }
