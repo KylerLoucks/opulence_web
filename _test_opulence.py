@@ -33,10 +33,14 @@ def test_dynamodb_save_state():
     o.add_player("player2")
     o._next_turn(o.players["player2"])
 
+def test_dynamodb_load_state():
+    o = Opulence(Config(), "01H1MANMWDSEHGSFHW0VA321H0")
+    o._load_game_state()
+
 
 if __name__ == "__main__":
 
-    test_dynamodb_save_state()
+    test_dynamodb_load_state()
     print("working!")
     
     # games[i] = o
@@ -45,7 +49,7 @@ if __name__ == "__main__":
     # o._get_game_data()
     # o.players["player1"].add_dragon()
     # o._get_game_data()
-    # o.game_logs.take_rune_log("1", rune.FIRE)
+    # o.game_logs.take_rune_log("1", Rune.FIRE)
 
     # o.players["player1"].isDead = True
     # o._next_turn(o.players["player4"])

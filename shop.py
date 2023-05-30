@@ -1,10 +1,7 @@
 import random
-
 from game_objects import Card, Dragon, Player
-import rune
-import card_types
-import dragon_types
 from game_logs import GameLogs
+from enums import Rune, RUNES, CardType, DragonType
 
 class Shop:
     def __init__(self, config):
@@ -33,25 +30,38 @@ class Shop:
         pass
 
 class DragonShop(Shop):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Handle passing in JSON data from dynamodb
+        if data is not None:
+            self.items = [
+                {
+                    "dragon": Dragon(
+                        runes=[Rune[rune] for rune in item['dragon']['runes']],
+                        type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
+                    "cost": item['dragon']['cost']
+                }
+                for item in data
+            ]
+
         self._generate_dragons()
 
     def _generate_dragons(self):
         sample = [
-            {"dragon": Dragon(type=dragon_types.CLOUD, runes=[rune.WIND, rune.WATER]),"cost": {rune.WIND: 20, rune.WATER: 20}},
-            {"dragon": Dragon(type=dragon_types.CRYSTAL, runes=[rune.EARTH, rune.ARCANE]), "cost": {rune.EARTH: 20, rune.ARCANE: 20}},
-            {"dragon": Dragon(type=dragon_types.DEEPSEA, runes=[rune.WATER, rune.DARK]), "cost": {rune.WATER: 20, rune.DARK: 20}},
-            {"dragon": Dragon(type=dragon_types.DUST, runes=[rune.EARTH, rune.WIND]), "cost": {rune.EARTH: 20, rune.WIND: 20}},
-            {"dragon": Dragon(type=dragon_types.LAVA, runes=[rune.FIRE, rune.EARTH]), "cost": {rune.FIRE: 20, rune.EARTH: 20}},
-            {"dragon": Dragon(type=dragon_types.LUNAR, runes=[rune.SOLAR, rune.DARK]), "cost": {rune.SOLAR: 20, rune.DARK: 20}},
-            {"dragon": Dragon(type=dragon_types.MUD, runes=[rune.WATER, rune.EARTH]), "cost": {rune.WATER: 20, rune.EARTH: 20}},
-            {"dragon": Dragon(type=dragon_types.NOVA, runes=[rune.FIRE, rune.SOLAR]), "cost": {rune.FIRE: 20, rune.SOLAR: 20}},
-            {"dragon": Dragon(type=dragon_types.STEAM, runes=[rune.FIRE, rune.WATER]), "cost": {rune.FIRE: 20, rune.WATER: 20}},
-            {"dragon": Dragon(type=dragon_types.STELLAR, runes=[rune.SOLAR, rune.WIND]), "cost": {rune.SOLAR: 20, rune.WIND: 20}},
-            {"dragon": Dragon(type=dragon_types.SWAMP, runes=[rune.WATER, rune.NATURE]), "cost": {rune.WATER: 20, rune.NATURE: 20}},
-            {"dragon": Dragon(type=dragon_types.THORN, runes=[rune.NATURE, rune.ARCANE]), "cost": {rune.NATURE: 20, rune.ARCANE: 20}},
-            {"dragon": Dragon(type=dragon_types.VOID, runes=[rune.ARCANE, rune.DARK]), "cost": {rune.ARCANE: 20, rune.DARK: 20}}
+            {"dragon": Dragon(type=DragonType.CLOUD, runes=[Rune.WIND, Rune.WATER]),"cost": {Rune.WIND: 20, Rune.WATER: 20}},
+            {"dragon": Dragon(type=DragonType.CRYSTAL, runes=[Rune.EARTH, Rune.ARCANE]), "cost": {Rune.EARTH: 20, Rune.ARCANE: 20}},
+            {"dragon": Dragon(type=DragonType.DEEPSEA, runes=[Rune.WATER, Rune.DARK]), "cost": {Rune.WATER: 20, Rune.DARK: 20}},
+            {"dragon": Dragon(type=DragonType.DUST, runes=[Rune.EARTH, Rune.WIND]), "cost": {Rune.EARTH: 20, Rune.WIND: 20}},
+            {"dragon": Dragon(type=DragonType.LAVA, runes=[Rune.FIRE, Rune.EARTH]), "cost": {Rune.FIRE: 20, Rune.EARTH: 20}},
+            {"dragon": Dragon(type=DragonType.LUNAR, runes=[Rune.SOLAR, Rune.DARK]), "cost": {Rune.SOLAR: 20, Rune.DARK: 20}},
+            {"dragon": Dragon(type=DragonType.MUD, runes=[Rune.WATER, Rune.EARTH]), "cost": {Rune.WATER: 20, Rune.EARTH: 20}},
+            {"dragon": Dragon(type=DragonType.NOVA, runes=[Rune.FIRE, Rune.SOLAR]), "cost": {Rune.FIRE: 20, Rune.SOLAR: 20}},
+            {"dragon": Dragon(type=DragonType.STEAM, runes=[Rune.FIRE, Rune.WATER]), "cost": {Rune.FIRE: 20, Rune.WATER: 20}},
+            {"dragon": Dragon(type=DragonType.STELLAR, runes=[Rune.SOLAR, Rune.WIND]), "cost": {Rune.SOLAR: 20, Rune.WIND: 20}},
+            {"dragon": Dragon(type=DragonType.SWAMP, runes=[Rune.WATER, Rune.NATURE]), "cost": {Rune.WATER: 20, Rune.NATURE: 20}},
+            {"dragon": Dragon(type=DragonType.THORN, runes=[Rune.NATURE, Rune.ARCANE]), "cost": {Rune.NATURE: 20, Rune.ARCANE: 20}},
+            {"dragon": Dragon(type=DragonType.VOID, runes=[Rune.ARCANE, Rune.DARK]), "cost": {Rune.ARCANE: 20, Rune.DARK: 20}}
         ]
         # pick between 0 and length of the dragons that exist
         amount_to_gen = min(len(sample), max(0, self.config.dragons_in_shop)) 
@@ -77,8 +87,22 @@ class DragonShop(Shop):
         }
 
 class CardShop(Shop):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Handle passing in JSON data from dynamodb
+        if data is not None:
+            self.items = [
+                {
+                    "card": Card(
+                        rune=Rune[item['card']['rune']],
+                        type=CardType[item['card']['type']],
+                        affinity=item['card']['affinity'],
+                        power=item['card']['power']), 
+                    "cost": item['card']['cost']
+                } for item in data
+            ]
+
         cards_in_shop = max(1, self.config.cards_in_shop)
         while len(self.items) < cards_in_shop:
             self._generate_card()
@@ -105,7 +129,7 @@ class CardShop(Shop):
         power = random.randint(min_power, max_power)
 
         # roll the type
-        card_type = random.choice([card_types.ATTACK, card_types.SHIELD])
+        card_type = random.choice([CardType.ATTACK, CardType.SHIELD])
 
         # roll the affinity value 
         max_affinity = min(round(total_cost / 1.5), self.config.leg_max_affinity)
@@ -132,15 +156,15 @@ class CardShop(Shop):
         cost = {}
         total_cost = max(random.randint(self.config.leg_min_total_cost, self.config.leg_max_total_cost), 0)
         i = total_cost
-        element = random.choice(rune.RUNES)                 # reroll element
+        element = random.choice(RUNES)                 # reroll element
         # iterate and distribute the runes to elements
         while i > 0:
             # roll 1/3 to change to a new element
             if random.randint(1,3) == 1:
-                element = random.choice(rune.RUNES)         # reroll element
+                element = random.choice(RUNES)         # reroll element
             # make sure you're not using an element that has exceeded its cap
             while cost.get(element, 0) >= self.config.leg_single_rune_max_cost:
-                element = random.choice(rune.RUNES)         # reroll element
+                element = random.choice(RUNES)         # reroll element
             
              # add 1 to the element cost
             cost[element] = cost.get(element, 0) + 1
@@ -193,12 +217,12 @@ class BasicCardShop(Shop):
         power = random.choices([1, 2, 3, 4, 5, 6], weights=[400, 500, 300, 50, 5, 1])
         power = power[0]
 
-        card_type = random.choice([card_types.ATTACK, card_types.SHIELD])
+        card_type = random.choice([CardType.ATTACK, CardType.SHIELD])
 
         # force 1/3 of basic cards to be mundane
         if random.randint(1, 3) == 1:
 
-            card_type = card_types.MUNDANE
+            card_type = CardType.MUNDANE
             affinity += 2
             power = 0
         

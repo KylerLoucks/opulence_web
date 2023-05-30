@@ -1,34 +1,32 @@
 import random
 import json
-import rune
-import card_types
-import dragon_types
+from enums import Rune, RUNES, CardType, DragonType
 class Shield:
-    def __init__(self, rune: rune=None, power=0):
+    def __init__(self, rune: Rune=None, power=0):
         self.rune = rune
         self.power = power
 
-    def block(self, element: str, power, log, super_effective_multiplier=2.0):
+    def block(self, element: Rune, power, log, super_effective_multiplier=2.0):
         """
         - param element: the damage type the shield is blocking incoming damage from
         TODO: super_effective_multiplier should come from config?
         """
         multiplier = 1.0
         pairs = {
-            (rune.FIRE, rune.NATURE),
-            (rune.WATER, rune.FIRE),
-            (rune.EARTH, rune.WIND),
-            (rune.NATURE, rune.EARTH),
-            (rune.SOLAR, rune.SOLAR),
-            (rune.DARK, rune.DARK),
-            (rune.WIND, rune.WATER)
+            (Rune.FIRE, Rune.NATURE),
+            (Rune.WATER, Rune.FIRE),
+            (Rune.EARTH, Rune.WIND),
+            (Rune.NATURE, Rune.EARTH),
+            (Rune.SOLAR, Rune.SOLAR),
+            (Rune.DARK, Rune.DARK),
+            (Rune.WIND, Rune.WATER)
         }
 
         # arcane goes through shields
-        if element == rune.ARCANE:
+        if element == Rune.ARCANE:
             return power
 
-        if element == rune.WIND:
+        if element == Rune.WIND:
             # TODO: hard-coded wind damage should come from config?
             multiplier *= 2.0
             log.super_effective = True
@@ -55,7 +53,7 @@ class Shield:
 
     def __dict__(self):
         return {
-            "rune": self.rune,
+            "rune": self.rune.value,
             "power": self.power
         }
 
@@ -64,8 +62,8 @@ class Player:
         self.sid = sid
         self.hp = hp
         self.shield = Shield() if shield == None else shield
-        self.runes = {rune:0 for rune in rune.RUNES}
-        self.affinities = {rune:0 for rune in rune.RUNES}
+        self.runes = {rune:0 for rune in RUNES}
+        self.affinities = {rune:0 for rune in RUNES}
         self.cards = []
         self.dragons = []
         self.isDead = False
@@ -76,13 +74,13 @@ class Player:
 
     def update_affinities(self):
         # updated every time a card is bought/played
-        self.affinities = {rune:0 for rune in rune.RUNES}
+        self.affinities = {rune:0 for rune in RUNES}
         for card in self.cards:
-            self.affinities[card['card'].rune] += card['card'].affinity
+            self.affinities[card['card'].rune.value] += card['card'].affinity
 
-    def take_damage(self, rune, power, log):
+    def take_damage(self, rune: Rune, power, log):
         """
-        rune: str The element type e.g. (rune.FIRE)
+        rune: str The element type e.g. (Rune.FIRE)
         power: How much base damage to take
         log: GameLogs Object
 
@@ -104,7 +102,7 @@ class Player:
         log.player_took_damage_log(self.display_name, rune)
         return damage
 
-    def get_dragon_multiplier(self, rune_type: rune=None):
+    def get_dragon_multiplier(self, rune_type: Rune=None):
         """
         returns the multiplier a player's dragons give him for a specified rune type
         returns 1.0 if he has no relevant dragons for that element
@@ -148,7 +146,7 @@ class Player:
         """
         Add a new Card object to the players cards (list)
         """
-        self.cards.append({'card': Card(rune.EARTH, card_types.SHIELD, 5, 15)})
+        self.cards.append({'card': Card(Rune.EARTH, CardType.SHIELD, 5, 15)})
         self.update_affinities()
    
     # used for testing
@@ -156,12 +154,12 @@ class Player:
         """
         Add a new Dragon object to the players dragons (list)
         """
-        self.dragons.append(Dragon(type=dragon_types.VOID, runes=[rune.ARCANE, rune.DARK]))
-        self.dragons.append(Dragon(type=dragon_types.STEAM, runes=[rune.ARCANE, rune.DARK]))
+        self.dragons.append(Dragon(type=DragonType.VOID, runes=[Rune.ARCANE, Rune.DARK]))
+        self.dragons.append(Dragon(type=DragonType.STEAM, runes=[Rune.ARCANE, Rune.DARK]))
 
     # for testing
     def set_runes(self):
-        self.runes = {rune:20 for rune in rune.RUNES}
+        self.runes = {rune:20 for rune in RUNES}
 
     def __str__(self):
         return json.dumps(self.__dict__())
@@ -171,17 +169,17 @@ class Player:
 class Dragon:
     """
     Dragon objects that can be held by a player
-    - param type: The card type e.g. (dragon_types.SOLAR)
+    - param type: The card type e.g. (DragonType.SOLAR)
     - param runes: The two runes associated with the dragon
     """
-    def __init__(self, type: dragon_types, runes: list):
+    def __init__(self, type: DragonType, runes: list[Rune]):
         self.type = type
         self.runes = runes
     
     def __dict__(self):
         return {
             "type": self.type,
-            "runes": self.runes,
+            "runes": [rune.value for rune in self.runes],
         }
 
 
@@ -189,11 +187,11 @@ class Card:
     """
     Card objects that can be held by a player
     - param rune: The element the card is e.g. (rune.FIRE) 
-    - param type: The card type e.g. (card_types.ATTACK)
+    - param type: The card enum type e.g. (CardType.ATTACK)
     - param affinity: The amount the card is worth in affinity
     - param power: the base amount the card does in damage/shield before modifiers
     """
-    def __init__(self, rune: rune, type: card_types, affinity, power):
+    def __init__(self, rune: Rune, type: CardType, affinity, power):
         self.rune = rune
         self.type = type
         self.affinity = affinity
@@ -201,8 +199,8 @@ class Card:
 
     def __dict__(self):
         return {
-            "rune": self.rune,
-            "type": self.type,
+            "rune": self.rune.value,
+            "type": self.type.value,
             "affinity": self.affinity,
             "power": self.power
         }
@@ -212,11 +210,11 @@ class Card:
         player: instance of Player object for the player of the card
         players: dict of the Player objects
         """
-        if self.type == card_types.MUNDANE:
+        if self.type == CardType.MUNDANE:
             return False
-        elif self.type == card_types.ATTACK:
+        elif self.type == CardType.ATTACK:
             return self._activate_attack(player1, player2, players, log)
-        elif self.type == card_types.SHIELD:
+        elif self.type == CardType.SHIELD:
             return self._activate_shield(player1, log)
 
     def _activate_shield(self, player, log):
@@ -240,13 +238,13 @@ class Card:
         # (reduce amount of vines based on the power of the card being played)
         # (reduce the amount of damage the card will do based on how many vines you had)
         if player1.vines > 0:
-            fire_bonus = 4.0 if self.rune == rune.FIRE else 1.0         # fire does 4x damage to vines
+            fire_bonus = 4.0 if self.rune == Rune.FIRE else 1.0         # fire does 4x damage to vines
             vines_left_over = player1.vines - self.power * multiplier * fire_bonus
             player1.vines = max(0, vines_left_over)
             self.power = -min(0, vines_left_over)//fire_bonus
 
         # if the card is earth, roll for crit chance
-        if self.rune == rune.EARTH:
+        if self.rune == Rune.EARTH:
             # TODO: hard-coded earth crit chance should come from config?
             crit = random.random() < 0.25
             self.power = self.power*3 if crit else self.power
@@ -257,27 +255,27 @@ class Card:
             return True
 
         # if the card is solar, do damage to everyone
-        elif self.rune == rune.SOLAR:
+        elif self.rune == Rune.SOLAR:
             for player_ in players.values():
                 player_.take_damage(self.rune, self.power * multiplier, log)
             return True
         # if the card is dark, heal the player
-        elif self.rune == rune.DARK:
+        elif self.rune == Rune.DARK:
             damage = player2.take_damage(self.rune, self.power * multiplier, log)
             player1.hp += damage
             return True
         # if the card is nature, apply vines
-        elif self.rune == rune.NATURE:
+        elif self.rune == Rune.NATURE:
             player2.vines += self.power * multiplier
             player2.take_damage(self.rune, 1 * multiplier, log)
             return True
         # if the card is fire, apply burning
-        elif self.rune == rune.FIRE:
+        elif self.rune == Rune.FIRE:
             player2.take_damage(self.rune, self.power * multiplier, log)
             player2.burn = self.power * multiplier
             return True
         # if the card is water, hit 1-4 players
-        elif self.rune == rune.WATER:
+        elif self.rune == Rune.WATER:
             player1.burn = 0 # let players put out their burn with a water card
             players_dict = {i:players[i] for i in players if i != player1.sid }
             players_ = random.sample(list(players_dict.values()), min(random.randint(1,4), len(players_dict))) 
@@ -286,9 +284,9 @@ class Card:
                     player_.take_damage(self.rune, self.power * multiplier, log)
             return True
         # if the card is arcane, ignore shield
-        elif self.rune == rune.ARCANE:
+        elif self.rune == Rune.ARCANE:
             player2.take_damage(self.rune, self.power * multiplier, log)
             return True
-        elif self.rune == rune.WIND:
+        elif self.rune == Rune.WIND:
             player2.take_damage(self.rune, self.power * multiplier, log)
             return True

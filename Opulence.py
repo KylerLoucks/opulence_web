@@ -9,11 +9,13 @@ from threading import Timer
 import threading
 import boto3
 import ulid
+from enums import Rune
+import pprint
 
 
 class Opulence:
-    def __init__(self, config: Config):
-        self.game_id = str(ulid.ULID())
+    def __init__(self, config: Config, game_id: str=None):
+        self.game_id = str(ulid.ULID()) if not game_id else game_id
         self.players = dict()
         self.player_sids = []
         self.player_names = []
@@ -37,8 +39,8 @@ class Opulence:
         # Current time, splitting and removing the miliseconds
         # start_time = str(datetime.now()).split(".")[0]
 
-        # unix epoch time format 5 min from now
-        time_to_live = str(time.time() + 5 * 60).split(".")[0]
+        # unix epoch time format 5 hours from now
+        time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
         transact_items=[
             {
                 # Update Game record
@@ -125,6 +127,29 @@ class Opulence:
             print("Failed to save game state", e)
             return None
         return resp
+    
+    def _load_game_state(self):
+        # Grab game data and users
+        resp = self.dynamodb.query(
+            TableName=self.table_name,
+            KeyConditionExpression="PK = :game",
+            ExpressionAttributeValues={
+                ":game": { "S": "GAME#{}".format(self.game_id) },
+            },
+            ScanIndexForward=True,
+            ReturnConsumedCapacity='TOTAL',
+        )
+        game_data = resp['Items'][0]
+        player_data = resp['Items'][1:]
+
+        self.game_id = game_data['PK']['S'].split("GAME#")[1]
+
+        self.card_shop = CardShop(game_data['card_shop']['S']['cards'])
+        self.dragon_shop = DragonShop(game_data['dragon_shop']['S']['dragons'])
+        # pprint.pprint(game_data)
+        # for player in player_data:
+
+
 
 
     def _get_game_data(self):
@@ -374,10 +399,10 @@ class Opulence:
             current_player = player
             if current_player.vines > 0:
                 self.game_logs.took_poison_dmg = True
-                current_player.take_damage(rune.NATURE, 1, self.game_logs)
+                current_player.take_damage(Rune.NATURE, 1, self.game_logs)
             if current_player.burn > 0:
                 self.game_logs.took_burn_dmg = True
-                current_player.take_damage(rune.FIRE, current_player.burn, self.game_logs)
+                current_player.take_damage(Rune.FIRE, current_player.burn, self.game_logs)
                 current_player.burn = 0
 
             # check if the game should end

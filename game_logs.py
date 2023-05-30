@@ -1,4 +1,4 @@
-import rune
+from enums import Rune
 from game_objects import Player, Card
 
 class GameLogs:
@@ -71,17 +71,17 @@ class GameLogs:
         self.logs.append(log_msg)
     
     def buy_card_log(self, sid, card: Card):
-        parsed = self._parse_rune(card.rune)
+        parsed = self._parse_rune(card.rune.value)
         log_msg = f"{sid} bought a x{card.power} power {card.type} card worth x{card.affinity} {parsed} affinity."
         self.logs.append(log_msg)
     
     def craft_card_log(self, sid, card: Card, element1, element2):
-        parsed = self._parse_rune(card.rune)
+        parsed = self._parse_rune(card.rune.value)
         log_msg = f"{sid} crafted a x{card.power} power {card.type} card worth x{card.affinity} {parsed} affinity."
         self.logs.append(log_msg)
     
     def play_card_log(self, card: Card, player1: Player, player2: Player=None):
-        parsed = self._parse_rune(card.rune)
+        parsed = self._parse_rune(card.rune.value)
         log_msg = f"{player1.display_name} played a x{card.power} power {card.type} card worth x{card.affinity} {parsed} affinity; granting them a {card.power} {parsed} SHIELD."
         
         if player2 is not None:
@@ -174,21 +174,21 @@ class GameLogs:
         parses the rune string from e.g. "ARCANE" to ":arcane:"
         returns the appropriate emoji tag for the front-end
         """
-        if element == rune.ARCANE:
+        if element == Rune.ARCANE.value:
             return ":arcane:"
-        elif element == rune.DARK:
+        elif element == Rune.DARK.value:
             return ":dark:"
-        elif element == rune.EARTH:
+        elif element == Rune.EARTH.value:
             return ":earth:"
-        elif element == rune.FIRE:
+        elif element == Rune.FIRE.value:
             return ":fire:"
-        elif element == rune.NATURE:
+        elif element == Rune.NATURE.value:
             return ":nature:"
-        elif element == rune.WATER:
+        elif element == Rune.WATER.value:
             return ":water:"
-        elif element == rune.SOLAR:
+        elif element == Rune.SOLAR.value:
             return ":solar:"
-        elif element == rune.WIND:
+        elif element == Rune.WIND.value:
             return ":wind:"
         
 
