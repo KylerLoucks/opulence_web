@@ -53,7 +53,7 @@ class Shield:
 
     def __dict__(self):
         return {
-            "rune": self.rune.value,
+            "rune": self.rune.value if self.rune is not None else None,
             "power": self.power
         }
 
@@ -178,7 +178,7 @@ class Dragon:
     
     def __dict__(self):
         return {
-            "type": self.type,
+            "type": self.type.value,
             "runes": [rune.value for rune in self.runes],
         }
 

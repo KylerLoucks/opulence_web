@@ -2,6 +2,7 @@ import random
 from game_objects import Card, Dragon, Player
 from game_logs import GameLogs
 from enums import Rune, RUNES, CardType, DragonType
+import Config
 
 class Shop:
     def __init__(self, config):
@@ -30,20 +31,19 @@ class Shop:
         pass
 
 class DragonShop(Shop):
-    def __init__(self, data=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         # Handle passing in JSON data from dynamodb
-        if data is not None:
-            self.items = [
-                {
-                    "dragon": Dragon(
-                        runes=[Rune[rune] for rune in item['dragon']['runes']],
-                        type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
-                    "cost": item['dragon']['cost']
-                }
-                for item in data
-            ]
+        # if data is not None:
+        #     self.items = [
+        #         {
+        #             "dragon": Dragon(
+        #                 runes=[Rune[rune] for rune in item['dragon']['runes']],
+        #                 type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
+        #             "cost": item['dragon']['cost']
+        #         }
+        #         for item in data
+        #     ]
 
         self._generate_dragons()
 
@@ -80,28 +80,27 @@ class DragonShop(Shop):
         dragons = []
         for dragon in self.items:
             dicify_dragon_obj = dragon['dragon'].__dict__()
-            dragons.append({'dragon': dicify_dragon_obj, 'cost': dragon['cost']})
-        
+            cost = { key.value: val for key, val in dragon['cost'].items() }
+            dragons.append({'dragon': dicify_dragon_obj, 'cost': cost})
         return {
             "dragons": dragons
         }
 
 class CardShop(Shop):
-    def __init__(self, data=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
         # Handle passing in JSON data from dynamodb
-        if data is not None:
-            self.items = [
-                {
-                    "card": Card(
-                        rune=Rune[item['card']['rune']],
-                        type=CardType[item['card']['type']],
-                        affinity=item['card']['affinity'],
-                        power=item['card']['power']), 
-                    "cost": item['card']['cost']
-                } for item in data
-            ]
+        # if data is not None:
+        #     self.items = [
+        #         {
+        #             "card": Card(
+        #                 rune=Rune[item['card']['rune']],
+        #                 type=CardType[item['card']['type']],
+        #                 affinity=item['card']['affinity'],
+        #                 power=item['card']['power']), 
+        #             "cost": item['card']['cost']
+        #         } for item in data
+        #     ]
 
         cards_in_shop = max(1, self.config.cards_in_shop)
         while len(self.items) < cards_in_shop:
@@ -156,15 +155,15 @@ class CardShop(Shop):
         cost = {}
         total_cost = max(random.randint(self.config.leg_min_total_cost, self.config.leg_max_total_cost), 0)
         i = total_cost
-        element = random.choice(RUNES)                 # reroll element
+        element = random.choice(list(Rune))                 # reroll element
         # iterate and distribute the runes to elements
         while i > 0:
             # roll 1/3 to change to a new element
             if random.randint(1,3) == 1:
-                element = random.choice(RUNES)         # reroll element
+                element = random.choice(list(Rune))         # reroll element
             # make sure you're not using an element that has exceeded its cap
             while cost.get(element, 0) >= self.config.leg_single_rune_max_cost:
-                element = random.choice(RUNES)         # reroll element
+                element = random.choice(list(Rune))         # reroll element
             
              # add 1 to the element cost
             cost[element] = cost.get(element, 0) + 1
@@ -197,7 +196,8 @@ class CardShop(Shop):
         cards = []
         for card in self.items:
             dicify_card_obj = card['card'].__dict__()
-            cards.append({'card': dicify_card_obj, 'cost': card['cost']})
+            cost = { key.value: val for key, val in card['cost'].items() }
+            cards.append({'card': dicify_card_obj, 'cost': cost})
         
         return {
             "cards": cards,

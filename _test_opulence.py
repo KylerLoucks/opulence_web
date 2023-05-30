@@ -1,9 +1,9 @@
 import json
 from Config import Config
 from game_objects import *
-from Opulence import Opulence
-from shop import *
-from game_logs import GameLogs
+from opulence import Opulence
+# from shop import *
+# from game_logs import GameLogs
 import datetime
 import time
 from threading import Timer
@@ -28,7 +28,7 @@ def test_threading_turn_timer():
     print(games)
 
 def test_dynamodb_save_state():
-    o = Opulence(Config())
+    o = Opulence(config=Config())
     o.add_player("player1")      
     o.add_player("player2")
     o._next_turn(o.players["player2"])
@@ -39,8 +39,8 @@ def test_dynamodb_load_state():
 
 
 if __name__ == "__main__":
-
-    test_dynamodb_load_state()
+    test_dynamodb_save_state()
+    # test_dynamodb_load_state()
     print("working!")
     
     # games[i] = o

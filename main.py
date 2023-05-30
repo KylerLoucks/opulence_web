@@ -7,7 +7,7 @@ import flask
 from flask import Flask, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import json
-from Opulence import Opulence
+from opulence import Opulence
 from Config import Config
 from GlobalMethods import log, error
 import os

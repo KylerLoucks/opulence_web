@@ -10,7 +10,6 @@ import threading
 import boto3
 import ulid
 from enums import Rune
-import pprint
 
 
 class Opulence:
@@ -38,7 +37,7 @@ class Opulence:
     def _save_state(self):
         # Current time, splitting and removing the miliseconds
         # start_time = str(datetime.now()).split(".")[0]
-
+        print("FIX ME    ", json.dumps(self.dragon_shop.__dict__()))
         # unix epoch time format 5 hours from now
         time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
         transact_items=[
@@ -141,8 +140,6 @@ class Opulence:
         )
         game_data = resp['Items'][0]
         player_data = resp['Items'][1:]
-
-        self.game_id = game_data['PK']['S'].split("GAME#")[1]
 
         self.card_shop = CardShop(game_data['card_shop']['S']['cards'])
         self.dragon_shop = DragonShop(game_data['dragon_shop']['S']['dragons'])
