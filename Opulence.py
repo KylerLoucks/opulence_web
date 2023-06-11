@@ -1,7 +1,7 @@
 import json
 from Config import Config
 from game_objects import *
-from shop import *
+from shop import CardShop, DragonShop, BasicCardShop
 from game_logs import GameLogs
 import datetime
 import time
@@ -10,6 +10,7 @@ import threading
 import boto3
 import ulid
 from enums import Rune
+import pprint
 
 
 class Opulence:
@@ -21,9 +22,9 @@ class Opulence:
         self.turn = 0
         self.runes_taken = 0
         self.config = config
-        self.card_shop = CardShop(config)
-        self.dragon_shop = DragonShop(config)
-        self.basic_card_shop = BasicCardShop(config)
+        self.card_shop = CardShop(config=config)
+        self.dragon_shop = DragonShop(config=config)
+        self.basic_card_shop = BasicCardShop(config=config)
         self.game_logs = GameLogs()
         self.game_started = False
         self.game_over = False
@@ -37,7 +38,7 @@ class Opulence:
     def _save_state(self):
         # Current time, splitting and removing the miliseconds
         # start_time = str(datetime.now()).split(".")[0]
-        print("FIX ME    ", json.dumps(self.dragon_shop.__dict__()))
+
         # unix epoch time format 5 hours from now
         time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
         transact_items=[
@@ -78,6 +79,11 @@ class Opulence:
 
         # For each player in the game, update their records
         for id, player in self.players.items():
+
+            # JSON serialize the players cards and dragon objects
+            pl_cards = [card['card'].__dict__() for card in player.cards]
+            pl_dragons = [dragon.__dict__() for dragon in player.dragons]
+
             transact_items.append(
                 {
                     "Update": {
@@ -108,8 +114,8 @@ class Opulence:
                             ":hp": { "N": str(player.hp) },
                             ":runes": { "S": json.dumps(player.runes) },
                             ":affinities": { "S": json.dumps(player.affinities) },
-                            ":cards": { "S": json.dumps(player.cards) },
-                            ":dragons": { "S": json.dumps(player.dragons) },
+                            ":cards": { "S": json.dumps(pl_cards) },
+                            ":dragons": { "S": json.dumps(pl_dragons) },
                             ":vines": { "N": str(player.vines) },
                             ":burn": { "N": str(player.burn) },
                             ":display_name": { "S": player.display_name },
@@ -141,10 +147,24 @@ class Opulence:
         game_data = resp['Items'][0]
         player_data = resp['Items'][1:]
 
-        self.card_shop = CardShop(game_data['card_shop']['S']['cards'])
-        self.dragon_shop = DragonShop(game_data['dragon_shop']['S']['dragons'])
-        # pprint.pprint(game_data)
-        # for player in player_data:
+        # Parse the stringified json that was dumped during '_save_state()'
+        card_shop_data      = json.loads(game_data['card_shop']['S'])
+        dragon_shop_data    = json.loads(game_data['dragon_shop']['S'])
+        self.card_shop      = CardShop(data=card_shop_data['cards'], config=Config())
+        self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=Config())
+        self.game_over      = game_data['game_over']['BOOL']
+        self.game_started   = game_data['started']['BOOL']
+        self.turn           = int(game_data['turn']['N'])
+        self.tied_game      = game_data['tied_game']['BOOL']
+        self.runes_taken    = int(game_data['runes-taken']['N'])
+
+        # Update each players state
+        for index, player in enumerate(player_data):
+            sid = player['SK']['S'].split('USER#')[1]
+            name = player['display_name']['S']
+            hp = player['hp']['N']
+            self.players[sid] = Player(sid, name=name, hp=hp, data=player_data[index])
+            self.player_sids.append(sid)
 
 
 
@@ -184,7 +204,7 @@ class Opulence:
             return True
 
 
-
+    # TODO: Remove player_names field
     def add_player(self, sid: str, name: str=None):
         num_players = len(self.players)
         if num_players >= self.config.max_players \

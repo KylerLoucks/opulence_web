@@ -5,9 +5,10 @@ from enums import Rune, RUNES, CardType, DragonType
 import Config
 
 class Shop:
-    def __init__(self, config):
+    def __init__(self, config: Config, data=None, ):
         self.items = []
         self.config = config
+        self.data = data
 
     def cost_after_affinity(self, player: Player, item_idx: int):
         """
@@ -31,21 +32,21 @@ class Shop:
         pass
 
 class DragonShop(Shop):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config, data=None):
+        super().__init__(config, data)
         # Handle passing in JSON data from dynamodb
-        # if data is not None:
-        #     self.items = [
-        #         {
-        #             "dragon": Dragon(
-        #                 runes=[Rune[rune] for rune in item['dragon']['runes']],
-        #                 type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
-        #             "cost": item['dragon']['cost']
-        #         }
-        #         for item in data
-        #     ]
-
-        self._generate_dragons()
+        if self.data is not None:
+            self.items = [
+                {
+                    "dragon": Dragon(
+                        runes=[Rune[rune] for rune in item['dragon']['runes']],
+                        type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
+                    "cost": item['cost']
+                }
+                for item in self.data
+            ]
+        else:
+            self._generate_dragons()
 
     def _generate_dragons(self):
         sample = [
@@ -87,20 +88,20 @@ class DragonShop(Shop):
         }
 
 class CardShop(Shop):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config, data=None):
+        super().__init__(config, data)
         # Handle passing in JSON data from dynamodb
-        # if data is not None:
-        #     self.items = [
-        #         {
-        #             "card": Card(
-        #                 rune=Rune[item['card']['rune']],
-        #                 type=CardType[item['card']['type']],
-        #                 affinity=item['card']['affinity'],
-        #                 power=item['card']['power']), 
-        #             "cost": item['card']['cost']
-        #         } for item in data
-        #     ]
+        if self.data is not None:
+            self.items = [
+                {
+                    "card": Card(
+                        rune=Rune[item['card']['rune']],
+                        type=CardType[item['card']['type']],
+                        affinity=item['card']['affinity'],
+                        power=item['card']['power']), 
+                    "cost": item['cost']
+                } for item in self.data
+            ]
 
         cards_in_shop = max(1, self.config.cards_in_shop)
         while len(self.items) < cards_in_shop:
@@ -205,8 +206,8 @@ class CardShop(Shop):
 
 
 class BasicCardShop(Shop):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config, data=None):
+        super().__init__(config, data)
     
     def _generate_card(self, element1, element2):
         # basic cards do not populate a shop like the legendary cards do. Instead they're generated on the fly 

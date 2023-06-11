@@ -58,7 +58,7 @@ class Shield:
         }
 
 class Player:
-    def __init__(self, sid: str, hp=10, shield: Shield=None, name: str=None):
+    def __init__(self, sid: str, hp=10, shield: Shield=None, name: str=None, data=None):
         self.sid = sid
         self.hp = hp
         self.shield = Shield() if shield == None else shield
@@ -71,6 +71,49 @@ class Player:
         # status effects, handled elsewhere
         self.vines = 0
         self.burn = 0
+
+        if data is not None:
+            self._populate_from_dynamodb(data)
+    
+    def _populate_from_dynamodb(self, data):
+        """
+        Updates the players state to match the state in dynamodb
+        data: The payload from dynamodb
+        """
+        self.hp = int(data['hp']['N'])
+        self.isDead = data['is_dead']['BOOL']
+        self.display_name = data['display_name']['S']
+        self.vines = int(data['vines']['N'])
+        self.burn = int(data['burn']['N'])
+        self.runes = json.loads(data['runes']['S'])
+        self.affinities = json.loads(data['affinities']['S'])
+        
+        shield_data = json.loads(data['shield']['S'])
+        if shield_data['rune'] == None:
+            self.shield = Shield()
+        else:
+            self.shield = Shield(
+                rune=Rune[shield_data['rune']],
+                power=shield_data['power']
+            )
+
+        card_data = json.loads(data['cards']['S'])
+        self.cards = [
+            {'card': Card(
+                    rune=Rune[card['rune']],
+                    type=CardType[card['type']],
+                    affinity=card['affinity'],
+                    power=card['power'])}
+            for card in card_data
+        ]
+
+        dragon_data = json.loads(data['dragons']['S'])
+        self.dragons = [
+            Dragon(
+                type=DragonType[dragon['type']],
+                runes=[Rune[rune] for rune in dragon['runes']])
+            for dragon in dragon_data 
+        ]
 
     def update_affinities(self):
         # updated every time a card is bought/played

@@ -27,20 +27,30 @@ def test_threading_turn_timer():
         # games[i] = o
     print(games)
 
+def test_basic_game():
+    o = Opulence(Config())
+    o.add_player("player1")
+    o.add_player("player2")
+    print(o.player_sids)
+
+# Saving and loading state to dynamodb
 def test_dynamodb_save_state():
     o = Opulence(config=Config())
-    o.add_player("player1")      
-    o.add_player("player2")
+    o.add_player("player2")      
+    o.add_player("player1")
+    o.players['player1'].add_card()
+    o.players['player1'].add_dragon()
     o._next_turn(o.players["player2"])
 
 def test_dynamodb_load_state():
-    o = Opulence(Config(), "01H1MANMWDSEHGSFHW0VA321H0")
+    o = Opulence(Config(), "01H2P7WJXJPDDZCFSAKQVY1CDX") 
     o._load_game_state()
+    print(o.player_sids)
 
 
 if __name__ == "__main__":
-    test_dynamodb_save_state()
-    # test_dynamodb_load_state()
+    # test_dynamodb_save_state()
+    test_dynamodb_load_state()
     print("working!")
     
     # games[i] = o
