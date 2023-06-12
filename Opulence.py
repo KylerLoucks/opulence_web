@@ -3,7 +3,7 @@ from Config import Config
 from game_objects import *
 from shop import CardShop, DragonShop, BasicCardShop
 from game_logs import GameLogs
-import datetime
+from datetime import datetime
 import time
 from threading import Timer
 import threading
@@ -30,16 +30,120 @@ class Opulence:
         self.game_over = False
         self.turn_timer = None
         self.tied_game = False
+        
+        # check if only a card or rune was purchased/taken
+        self.boring_turn = False
 
         self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
         self.table_name = "testgamestate"
 
-    # Update the game state in DynamoDB
-    def _save_state(self):
-        # Current time, splitting and removing the miliseconds
-        # start_time = str(datetime.now()).split(".")[0]
+    def _save_player_state(self, player):
+        """
+        Save only the game state and a specific players state.
+        Useful for when other players had no state changes.
+        """
+        self.boring_turn = False
+        time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
 
-        # unix epoch time format 5 hours from now
+        transact_items=[
+            {
+                # Update Game record
+                "Update": {
+                    "TableName": self.table_name,
+                    "Key": {
+                        "PK": { "S": f"GAME#{self.game_id}" },
+                        "SK": { "S": f"GAME#{self.game_id}" },
+                    },
+                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
+                                        #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
+                                        #drg_shop = :drg_shop, #ttl = :ttl, #config = :config",
+                    "ExpressionAttributeNames": {
+                        "#started": "started",
+                        "#go": "game_over",
+                        "#tied": "tied_game",
+                        "#turn": "turn",
+                        "#rt": "runes_taken",
+                        "#crd_shop": "card_shop",
+                        "#drg_shop": "dragon_shop",
+                        "#ttl": "TTL",
+                        "#config": "config"
+
+                    },
+                    "ExpressionAttributeValues": {
+                        ":started": { "BOOL": self.game_started },
+                        ":runes_taken": { "N": str(self.runes_taken) },
+                        ":game_over": { "BOOL": self.game_over },
+                        ":turn": { "N": str(self.turn) },
+                        ":tied": { "BOOL": self.tied_game },
+                        ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
+                        ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
+                        ":config": { "S": json.dumps(self.config.__dict__()) },
+                        ":ttl": { "N": str(time_to_live) }
+                    },
+                    "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
+                }
+            }
+        ]
+
+        # JSON serialize the players cards and dragon objects
+        pl_cards = [card['card'].__dict__() for card in player.cards]
+        pl_dragons = [dragon.__dict__() for dragon in player.dragons]
+
+        transact_items.append(
+            {
+                "Update": {
+                    "TableName": self.table_name,
+                    "Key": {
+                        "PK": { "S": f"GAME#{self.game_id}" },
+                        "SK": { "S": f"USER#{player.sid}" },
+                    },
+                    "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
+                                        #cards = :cards, #dragons = :dragons, #vines = :vines, \
+                                        #burn = :burn, #display_name = :display_name, #dead = :dead, \
+                                        #shield = :shield, \
+                                        #ttl = :ttl",
+                    "ExpressionAttributeNames": {
+                        "#hp": "hp",
+                        "#runes": "runes",
+                        "#affinities": "affinities",
+                        "#cards": "cards",
+                        "#dragons": "dragons",
+                        "#vines": "vines",
+                        "#burn": "burn",
+                        "#display_name": "display_name",
+                        "#dead": "is_dead",
+                        "#shield": "shield",
+                        "#ttl": "TTL"
+                    },
+                    "ExpressionAttributeValues": {
+                        ":hp": { "N": str(player.hp) },
+                        ":runes": { "S": json.dumps(player.runes) },
+                        ":affinities": { "S": json.dumps(player.affinities) },
+                        ":cards": { "S": json.dumps(pl_cards) },
+                        ":dragons": { "S": json.dumps(pl_dragons) },
+                        ":vines": { "N": str(player.vines) },
+                        ":burn": { "N": str(player.burn) },
+                        ":display_name": { "S": player.display_name },
+                        ":dead": { "BOOL": player.isDead },
+                        ":shield": { "S": json.dumps(player.shield.__dict__()) },
+                        ":ttl": { "N": time_to_live}
+                    },
+                }
+            }
+        )
+        try:
+            resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
+        except Exception as e:
+            print("Failed to save game state", e)
+            return None
+        return resp
+
+    def _save_state(self):
+        """
+        Save the game state and state of all players in the game.
+        """
+
+        # unix epoch time format 5 hours from now without milliseconds
         time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
         transact_items=[
             {
@@ -292,6 +396,7 @@ class Opulence:
         self.runes_taken += 1
         if self.runes_taken >= self.config.runes_per_turn:
             self.game_logs.take_rune_log(self.players[sid].display_name, rune) # maybe ? add a boolean to say something different when the turn ends on this action
+            self.boring_turn = True
             self._next_turn(self.players[sid])
             return True
         else:
@@ -317,6 +422,7 @@ class Opulence:
         if self.card_shop.buy(self.players[sid], card_idx, self.game_logs):
             # buy() adds the card to the players hand
             self.players[sid].update_affinities()
+            self.boring_turn = True
             self._next_turn(self.players[sid])
             return True
         
@@ -344,6 +450,7 @@ class Opulence:
         if self.basic_card_shop.buy(self.players[sid], element1, element2, self.game_logs):
             # buy() adds the card to the players hand
             self.players[sid].update_affinities()
+            self.boring_turn = True
             self._next_turn(self.players[sid])
             return True
     
@@ -365,6 +472,7 @@ class Opulence:
         
         # add the dragon to the player
         if self.dragon_shop.buy(self.players[sid], card_idx):
+            self.boring_turn = True
             self._next_turn(self.players[sid])
             return True
 
@@ -465,7 +573,8 @@ class Opulence:
         self.game_logs.next_turn_log(str(next_player))
 
         # Save game state:
-        print(self._save_state())
+        self._save_player_state(player=player) if self.boring_turn else print(self._save_state())
+            
 
         # Restart the turn timer
         # self.turn_timer.cancel()
