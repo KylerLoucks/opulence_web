@@ -134,6 +134,10 @@ class Opulence:
         return resp
     
     def _load_game_state(self):
+        """
+        Query DynamoDB for game and user data
+        """
+
         # Grab game data and users
         resp = self.dynamodb.query(
             TableName=self.table_name,
