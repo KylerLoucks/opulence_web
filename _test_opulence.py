@@ -43,7 +43,7 @@ def test_dynamodb_save_state():
     o._next_turn(o.players["player2"])
 
 def test_dynamodb_load_state():
-    o = Opulence(Config(), "01H2P7WJXJPDDZCFSAKQVY1CDX") 
+    o = Opulence(Config(), "01H2PPY91DSBKDW6WBY5E85TKM") # Copy the ID from dynamo after running test_save_state()
     o._load_game_state()
     print(o.player_sids)
 

@@ -50,7 +50,9 @@ class Opulence:
                         "PK": { "S": f"GAME#{self.game_id}" },
                         "SK": { "S": f"GAME#{self.game_id}" },
                     },
-                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, #drg_shop = :drg_shop, #ttl = :ttl",
+                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
+                                        #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
+                                        #drg_shop = :drg_shop, #ttl = :ttl, #config = :config",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -59,7 +61,8 @@ class Opulence:
                         "#rt": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
-                        "#ttl": "TTL"
+                        "#ttl": "TTL",
+                        "#config": "config"
 
                     },
                     "ExpressionAttributeValues": {
@@ -70,6 +73,7 @@ class Opulence:
                         ":tied": { "BOOL": self.tied_game },
                         ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
                         ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
+                        ":config": { "S": json.dumps(self.config.__dict__()) },
                         ":ttl": { "N": str(time_to_live) }
                     },
                     "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
@@ -154,13 +158,20 @@ class Opulence:
         # Parse the stringified json that was dumped during '_save_state()'
         card_shop_data      = json.loads(game_data['card_shop']['S'])
         dragon_shop_data    = json.loads(game_data['dragon_shop']['S'])
+        config              = json.loads(game_data['config']['S'])
+        self.config         = Config(
+                                max_players=config['max_players'],
+                                cards_in_shop=config['cards_in_shop'],
+                                runes_per_turn=config['runes_per_turn'],
+                                dragons_in_shop=config['drags_in_shop'],
+                                player_starting_health=config['starting_hp'])
         self.card_shop      = CardShop(data=card_shop_data['cards'], config=Config())
         self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=Config())
         self.game_over      = game_data['game_over']['BOOL']
         self.game_started   = game_data['started']['BOOL']
         self.turn           = int(game_data['turn']['N'])
         self.tied_game      = game_data['tied_game']['BOOL']
-        self.runes_taken    = int(game_data['runes-taken']['N'])
+        self.runes_taken    = int(game_data['runes_taken']['N'])
 
         # Update each players state
         for index, player in enumerate(player_data):

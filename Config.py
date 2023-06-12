@@ -36,5 +36,14 @@ class Config:
         self.leg_min_total_cost = leg_min_total_cost
         self.leg_max_total_cost = leg_max_total_cost
         self.leg_single_rune_max_cost = leg_single_rune_max_cost
+    
+    def __dict__(self):
+        return {
+            "max_players": self.max_players,
+            "starting_hp": self.player_starting_health,
+            "runes_per_turn": self.runes_per_turn,
+            "drags_in_shop": self.dragons_in_shop,
+            "cards_in_shop": self.cards_in_shop
+        }
         
 
