@@ -73,6 +73,8 @@ class DragonShop(Shop):
             for key, value in self.cost_after_affinity(player, item_idx).items():
                 player.runes[key] -= value
             player.dragons.append(self.items[item_idx]["dragon"])
+            player.dragons_owned +=1
+
             self.items.pop(item_idx)
             return True
         return False
@@ -172,7 +174,7 @@ class CardShop(Shop):
 
         return cost, total_cost
 
-    def buy(self, player, item_idx, log: GameLogs=None):
+    def buy(self, player: Player, item_idx, log: GameLogs=None):
         """
         player: an instance of the Player object
         item_idx: index of the item in the shop
@@ -183,7 +185,7 @@ class CardShop(Shop):
                 player.runes[rune] -= cost
             log.buy_card_log(player.display_name, self.items[item_idx]['card'])
             player.cards.append(self.items[item_idx])
-            
+            player.leg_cards_bought +=1
             # remove card at index
             self.items.pop(item_idx)
             # generate a new card to the top (index 0)

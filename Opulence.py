@@ -622,11 +622,80 @@ class Opulence:
 
         if len(players_alive) == 1:
             winner = list(players_alive.values())[0].display_name
+            list(players_alive.values())[0].won = True
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
             return True
         return False
+    
+    def _update_user_data(self):
+        """
+        Update all players stats that were in the game
+        """
+        transact_items = []
+        for id, player in self.players.items():
+            wins = 1 if player.won else 0
+            dragons_owned = player.dragons_owned
+            legendary_cards_bought = player.leg_cards_bought
 
+            transact_items.append(
+                {
+                    "Update": {
+                        "TableName": self.table_name,
+                        "Key": {
+                            "PK": { "S": f"USER#{player.sid}" },
+                            "SK": { "S": f"USER#{player.sid}" },
+                        },
+                        "UpdateExpression": "SET #wins = #wins + :wins, \
+                                            #dragons = #dragons + :dragons, \
+                                            #leg_cards = #leg_cards + :leg_cards, \
+                                            ",
+                        "ExpressionAttributeNames": {
+                            "#wins": "games_won",
+                            "#dragons": "dragons_owned",
+                            "#leg_cards": "legendary_cards_bought",
+                        },
+                        "ExpressionAttributeValues": {
+                            ":wins": { "N": str(wins) },
+                            ":dragons": { "N": str(dragons_owned)},
+                            ":leg_cards": { "N": str(legendary_cards_bought)}
+                        },
+                    }
+                },
+            )
+
+            # Update the users game history with details on the game
+            transact_items.append(
+                {
+                    "Update": {
+                        "TableName": self.table_name,
+                        "Key": {
+                            "PK": { "S": f"USER#{player.sid}" },
+                            "SK": { "S": f"GAME#{player.sid}" },
+                        },
+                        "UpdateExpression": "SET #won = :won, \
+                                            #dragons = :dragons, \
+                                            #leg_cards = :leg_cards, \
+                                            ",
+                        "ExpressionAttributeNames": {
+                            "#won": "won",
+                            "#dragons": "dragons_owned",
+                            "#leg_cards": "legendary_cards_bought",
+                        },
+                        "ExpressionAttributeValues": {
+                            ":won": { "BOOL": player.won },
+                            ":dragons": { "N": str(dragons_owned)},
+                            ":leg_cards": { "N": str(legendary_cards_bought)}
+                        },
+                    }
+                }
+            )
+        try:
+            resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
+        except Exception as e:
+            print("Failed to save game state", e)
+            return None
+        return resp
 
 if __name__ == "__main__":
     games = {}

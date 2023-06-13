@@ -72,6 +72,11 @@ class Player:
         self.vines = 0
         self.burn = 0
 
+        # state to store after the game ends
+        self.won = False
+        self.leg_cards_bought = 0
+        self.dragons_owned = 0
+
         if data is not None:
             self._populate_from_dynamodb(data)
     
