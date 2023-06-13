@@ -625,6 +625,7 @@ class Opulence:
             list(players_alive.values())[0].won = True
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
+            self._update_user_data()
             return True
         return False
     
