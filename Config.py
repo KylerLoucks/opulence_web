@@ -43,7 +43,8 @@ class Config:
             "starting_hp": self.player_starting_health,
             "runes_per_turn": self.runes_per_turn,
             "drags_in_shop": self.dragons_in_shop,
-            "cards_in_shop": self.cards_in_shop
+            "cards_in_shop": self.cards_in_shop,
+            "turn_timer": self.turn_timer
         }
         
 

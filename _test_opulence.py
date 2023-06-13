@@ -31,6 +31,7 @@ def test_basic_game():
     o = Opulence(Config())
     o.add_player("player1")
     o.add_player("player2")
+    o.start_game("player1")
     print(o.player_sids)
 
 # Saving and loading state to dynamodb
@@ -50,7 +51,8 @@ def test_dynamodb_load_state():
 
 if __name__ == "__main__":
     # test_dynamodb_save_state()
-    test_dynamodb_load_state()
+    # test_dynamodb_load_state()
+    test_basic_game()
     print("working!")
     
     # games[i] = o

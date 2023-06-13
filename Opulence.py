@@ -316,9 +316,9 @@ class Opulence:
             self.game_logs.start_game_log(self.players[sid].display_name, self.players[sid2].display_name)
 
             # Create a timer thread to run _next_turn() after x seconds
-            # self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+            self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
             # Start the timer
-            # self.turn_timer.start()
+            self.turn_timer.start()
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
@@ -531,7 +531,7 @@ class Opulence:
         if player_left_during_turn:
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
-                # self.turn_timer.cancel()
+                self.turn_timer.cancel()
                 return
         
         # apply effects at the end of the turn
@@ -548,7 +548,7 @@ class Opulence:
             # check if the game should end
             if self._check_winner(): # if the game tied or was won (True)
                 self.game_over = True
-                # self.turn_timer.cancel()
+                self.turn_timer.cancel()
                 return
 
         # cycle cards in the shop
@@ -577,9 +577,9 @@ class Opulence:
             
 
         # Restart the turn timer
-        # self.turn_timer.cancel()
-        # self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
-        # self.turn_timer.start()
+        self.turn_timer.cancel()
+        self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+        self.turn_timer.start()
         print(f"Active threads: {len(threading.enumerate())} ")
     
 
