@@ -7,7 +7,7 @@ class Config:
             cards_in_shop = 8,
             dragons_in_shop = 2,
             player_starting_health = 10,
-            turn_timer = 10,
+            turn_timer = 30,
             #        global configs
             # leg means legendary
             leg_min_power = 4,                  # power = damage / shield potency (negative rounds to 0 on roll)

@@ -20,9 +20,11 @@
       <button  class="create-game-button"  v-on:click="play">Play</button>
       
       <!-- REDIS TEST -->
-      <input class="input-name" v-model="redisData" type="text" placeholder="Enter Redis Data" maxlength="20" pattern="[A-z0-9\s]">
+      <!-- <input class="input-name" v-model="redisData" type="text" placeholder="Enter Redis Data" maxlength="20" pattern="[A-z0-9\s]">
       <button  class="create-game-button"  v-on:click="emitRedisTest()">Test Data</button>
-      <h2 class="gameid-text">Redis Test Data: {{redisOtherUserData}}</h2>
+      <h2 class="gameid-text">Redis Test Data: {{redisOtherUserData}}</h2> -->
+
+
       <!-- <button  class="create-game-button"  v-on:click="showTutorial()">How To Play</button> -->
     </div>
 
@@ -86,6 +88,7 @@
         <template v-for="(user, index) in current_game_users" :key="index">
           <template v-if="user.sid == this.currentTurnSid">
             <span class="banner-current-turn">Current Turn: {{user.display_name}}</span>
+            <span class="banner-turn-timer">Turn Timer: {{ this.turnMinute + " : " + this.turnSecond }}</span>
           </template>
         </template>
     </div>
@@ -410,7 +413,13 @@
         connectedMsg: 'Disconnected',
         redisData: "",
         redisOtherUserData: "",
-        // socket: io('ws://localhost:5000', {transports: ['websocket',]}), // Flask server address
+
+        turnSecond: '0',
+        turnMinute: '0',
+        turnHour: '0',
+        turnDay: '0',
+        countDate: null,
+        timerId: null,
         
 
       
@@ -480,12 +489,12 @@
       },
       
 
-      emitRedisTest() {
-        let data = this.redisData
-        this.redisData = ""
-        this.socket.emit('redis-test', data)
+      // emitRedisTest() {
+      //   let data = this.redisData
+      //   this.redisData = ""
+      //   this.socket.emit('redis-test', data)
 
-      },
+      // },
 
       takeRune(element) {
         let data = element
@@ -561,6 +570,7 @@
         this.showHandModal = false
         this.gameStarted = false
         this.isTurn = false // make buttons greyed-out
+        this.logs = []
       },
       startGame: function() { // emits to the server with the roomId to leave (only handled on server side)
         this.socket.emit('start-game')
@@ -620,6 +630,35 @@
         // this.showHand = true
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
+
+      countDown(countDate) {
+        
+        const now = new Date().getTime();
+  
+        // Check if the countdown has finished
+        if (now >= countDate) {
+          console.log('Countdown finished!');
+          clearInterval(this.timerId)
+          return;
+        }
+
+        const diff = countDate - now;
+
+        const second = 1000;
+        const minute = second * 60;
+        const hour = minute * 60;
+        const day = hour * 24;
+
+        const m = Math.floor((diff % hour) / minute);
+        const s = Math.floor((diff % minute) / second);
+        const h = Math.floor((diff % day) / hour);
+        const d = Math.floor((diff / day));
+        m < 10 ? this.turnMinute = '0' + m : this.turnMinute = m;
+        s < 10 ? this.turnSecond = '0' + s : this.turnSecond = s;
+        h < 10 ? this.turnHour = '0' + h : this.turnHour = h;
+        this.turnDay = d;
+        
+      }
   
     },
   
@@ -659,12 +698,23 @@
       //     var elem = document.getElementsByClassName('chat-log-container');
       //     elem.scrollTop = elem.scrollHeight;
       // }, 2000);
+
+
+
+      // Handle turn timer
+      this.socket.on('turn-timer', (timer) => {
+        
+        this.countDate = new Date().getTime() + (timer > 0 ? timer + 1 : timer) * 1000;
+        this.timerId = setInterval(() => {
+          this.countDown(this.countDate)
+        }, 1000);
+      })
       
 
-      this.socket.on('redis-test', (msg) => {
-        this.redisOtherUserData = msg
-        console.log(this.redisOtherUserData)
-      });
+      // this.socket.on('redis-test', (msg) => {
+      //   this.redisOtherUserData = msg
+      //   console.log(this.redisOtherUserData)
+      // });
 
 
       this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server
@@ -708,7 +758,6 @@
         audio.play()
       });
 
-      // receive string of the element that killed a player | play the relevant sound effect
       this.socket.on('game-over', (res) => {
         var audio = new Audio(require('./assets/mp3s/victory.mp3'))
         // var audio_tie_game = new Audio(require('./assets/mp3s/reeverb.mp3'))
@@ -776,11 +825,16 @@
   
   
       this.socket.on('game-logs', (res) => {
-        this.logs = res
+        res.map((log) => {
+          this.logs.push(log)
+        })
+        // old implementation
+        // this.logs = res
       });
   
       // grab dict of user and card shop game data from server
       this.socket.on('game-data', (res) => {
+        console.log("got game data:", res)
         this.current_game_users = res['user_data']
         this.current_game_card_shop = res['card_shop']['cards']
         console.log("grabbing game data")
@@ -797,6 +851,8 @@
     // do things on first load of the DOM
     mounted: function() {
       this.pickRandomBackgroundOnDOMLoad()
+
+
 
 
       // mobile touch events
@@ -952,7 +1008,7 @@
     width: 100%;
     height: 100%;
     color: white;
-    background: rgb(0, 0, 0);
+    background: linear-gradient(to right, #711282, rgb(12, 66, 132));
     z-index: 1;
     display: flex;
     align-items: center;
@@ -960,7 +1016,11 @@
   }
 
   .game-banner .banner-current-turn {
-    justify-content: center;
+    margin-right: 5em;
+  }
+
+  .game-banner .banner-turn-timer {
+    margin-left: 5em;
   }
 
   .opulence-banner{

@@ -2,6 +2,9 @@
 from gevent import monkey
 monkey.patch_all()
 
+# import eventlet
+# eventlet.monkey_patch()
+
 import traceback
 import flask
 from flask import Flask, request
@@ -21,19 +24,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
 
 # Logger= True to show emit logs
-# message_queue=redis_url,
-socketio = SocketIO(app, cors_allowed_origins='*', message_queue=redis_url, logger=True)
+# message_queue=redis_url, <- put in SocketIO params to use redis
+socketio = SocketIO(app, cors_allowed_origins='*', message_queue=redis_url, logger=True, async_mode='gevent')
 
-# NEW IMPLEMENTATION
-# db = DynamoDBController()
-# game = db.get_game(id="01GPEVC9Q9TCV8VKY2S8J5G0FF")
-# print(game.get("Item"))
-
-gameCounter = 0
 games_dict={} # local games, this doesn't get sent to the front-end
 
+# TODO: Replace this with Dynamo query function that emits games
 games_list={} # emitted to clients
-
 
 
 # @app.route('/')
@@ -50,13 +47,15 @@ def redis_test(data):
 # built-in 'connect' event for socket io which gets called every time a user loads the webpage
 @socketio.on('connect')
 def client_connect():
+    print("user connected: ", request.sid)
     sid = str(request.sid)
     flask.session['sid'] = sid
     flask.session['gameID'] = None
     flask.session['displayName'] = ''
     emit('user-sid', sid)
+    #  # TODO: Remove this call completely and instead create a function/API that queries dynamo and emits the games_list from the response.
     emit('list-games', games_list, broadcast=True)
-    emit('Connection', 'Connected!') # Send 'Connection' data to the client
+    # emit('Connection', 'Connected!') # Send 'Connection' data to the client
     
     log('client loaded the webpage: ' + str(sid))
 
@@ -84,6 +83,7 @@ def on_client_disconnect():
         # if the player isn't in a game when they disconnect, return
         if gameID == 'None':
             return
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         log(f"Player is Disconnecting....: {name}")
         if opulence.remove_player(sid, name, disconnected=True):
@@ -92,9 +92,12 @@ def on_client_disconnect():
             flask.session['gameID'] = None
             # remove the game if nobody is in it
             if len(opulence.players) <= 0:
+                # TODO: Remove game from dynamodb instead. Also remove the user.
                 del games_list[gameID]
                 del games_dict[gameID]
                 emit('list-games', games_list, broadcast=True)
+                turn_timer = 0
+                emit('turn-timer', turn_timer, room=gameID)
             elif len(opulence.players) > 0:
                 emit('list-games', games_list, broadcast=True)
                 emit('game-logs', opulence.game_logs.logs, room=gameID)
@@ -102,12 +105,14 @@ def on_client_disconnect():
                 # if the game is started, emit the next persons turn. It could have been the turn of the person who left
                 if opulence.game_started and not opulence.game_over: 
                     emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+                    emit('turn-timer', opulence.config.turn_timer, room=gameID)
 
 # emit to the clients when a user selects an attack card they want to play
 @socketio.on('attack-card-selected')
 def attack_card_selected(data):
     gameID = str(flask.session['gameID'])
     sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
+    # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
     opulence = games_dict[gameID]
 
     # make sure the button only disapears if it's the turn of the player that clicks the attack button 
@@ -125,6 +130,7 @@ def attack_card_selected(data):
 def shop_button_pressed(data):
     sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
     gameID = str(flask.session['gameID'])
+    # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
     opulence = games_dict[gameID]
 
     print(data)
@@ -152,7 +158,7 @@ def take_rune(data):
     try:
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
-        
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         rune = str(data)
         runes_taken = opulence.runes_taken
@@ -163,6 +169,7 @@ def take_rune(data):
             emit('play-sound', 'soft_click', room=gameID)
             if runes_taken == opulence.config.runes_per_turn - 1: # if before taking another rune the amount taken would cause a change in turns:
                 emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID) # emit whose turn it is
+                turn_timer = opulence.config.turn_timer
                 # notify the front end if someone died
                 if opulence.game_logs.new_death:    
                     emit('player-died', opulence.game_logs.new_death, room=gameID)
@@ -170,6 +177,8 @@ def take_rune(data):
                 # notify the front end if gameover
                 if opulence.game_over:
                     emit('game-over', opulence.game_logs.winner, room=gameID)
+                    turn_timer = 0
+                emit('turn-timer', turn_timer, room=gameID)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -185,7 +194,7 @@ def play_card(data):
             sid2 = None
         card_idx = data.get('index', 0)
         gameID = str(flask.session['gameID'])
-        
+        # TODO replace opulence ref w/ Opulence(game_id=game_id) \ opulence._load_game_state()
         opulence = games_dict[gameID]
 
         # record the number of living players
@@ -204,6 +213,7 @@ def play_card(data):
                 emit('game-logs', opulence.game_logs.logs, room=gameID)
                 emit('game-data', opulence._get_game_data(), room=gameID) # send the current_game_data to the client
                 emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+                turn_timer =  opulence.config.turn_timer
 
                 # notify the front end if someone died
                 if opulence.game_logs.new_death:    
@@ -212,6 +222,7 @@ def play_card(data):
                 # notify the front end if gameover
                 if opulence.game_over:
                     emit('game-over', opulence.game_logs.winner, room=gameID)
+                    turn_timer = 0
                 # play a sound if a card was played
                 elif opulence.game_logs.played_card:
                     if opulence.game_logs.played_card == "ATTACK":
@@ -219,6 +230,7 @@ def play_card(data):
                     elif opulence.game_logs.played_card == "SHIELD":
                         emit('play-sound', 'play_shield', room=gameID)
                     opulence.game_logs.played_card = None
+                emit('turn-timer', turn_timer, room=gameID)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -229,7 +241,7 @@ def buy_card(data):
     try:
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
-        
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         card_idx = data['index']
         log(f"card at index: {card_idx} was attempted to be purchased")
@@ -239,6 +251,7 @@ def buy_card(data):
             emit('game-data', opulence._get_game_data(), room=gameID) # send the current_game_data to the client
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('play-sound', 'purchase_legendary', room=gameID)
+            turn_timer =  opulence.config.turn_timer
             # notify the front end if someone died
             if opulence.game_logs.new_death:    
                 emit('player-died', opulence.game_logs.new_death, room=gameID)
@@ -246,6 +259,9 @@ def buy_card(data):
             # notify the front end if gameover
             if opulence.game_over:
                 emit('game-over', opulence.game_logs.winner, room=gameID)
+                turn_timer = 0
+
+            emit('turn-timer', turn_timer, room=gameID)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -259,7 +275,7 @@ def craft_card(data):
         
         element1 = data['element1']
         element2 = data['element2']
-
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         if opulence.buy_basic_card(sid, element1=element1, element2=element2):
             log('crafting the card was successful')
@@ -267,6 +283,8 @@ def craft_card(data):
             emit('game-data', opulence._get_game_data(), room=gameID) # send the current_game_data to the client
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('play-sound', 'purchase', room=gameID)
+            turn_timer =  opulence.config.turn_timer
+            
             # notify the front end if someone died
             if opulence.game_logs.new_death:    
                 emit('player-died', opulence.game_logs.new_death, room=gameID)
@@ -274,6 +292,9 @@ def craft_card(data):
             # notify the front end if gameover
             if opulence.game_over:
                 emit('game-over', opulence.game_logs.winner, room=gameID)
+                turn_timer = 0
+
+            emit('turn-timer', turn_timer, room=gameID)
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -285,6 +306,7 @@ def buy_dragon(data):
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         dragon_idx = data['index']
         log(f"dragon at index: {dragon_idx} was attempted to be purchased")
@@ -295,6 +317,7 @@ def buy_dragon(data):
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('play-sound', 'dragon_growl', room=gameID)
+            turn_timer =  opulence.config.turn_timer
             # notify the front end if someone died
             if opulence.game_logs.new_death:    
                 emit('player-died', opulence.game_logs.new_death, room=gameID)
@@ -302,6 +325,9 @@ def buy_dragon(data):
             # notify the front end if gameover
             if opulence.game_over:
                 emit('game-over', opulence.game_logs.winner, room=gameID)
+                turn_timer = 0
+            
+            emit('turn-timer', turn_timer, room=gameID)
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -326,9 +352,6 @@ def create_game(data):
         cards_in_shop = min(20, max(0, data.get('cardsinshop', 5))) if isinstance(data.get('cardsinshop', 5), int) else 5
         player_starting_hp = min(99, max(1, data.get('startinghealth', 10))) if isinstance(data.get('startinghealth', 10), int) else 10
 
-        global gameCounter
-        gameCounter+=1
-        gameID = str(gameCounter)
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
         opulence = Opulence(
@@ -338,20 +361,21 @@ def create_game(data):
             cards_in_shop=cards_in_shop,
             player_starting_health=player_starting_hp
             ))
-        
-        opulence.game_logs.create_game_log(name, gameID)
+        game_id = opulence.game_id
+        opulence.game_logs.create_game_log(name, game_id)
         opulence.add_player(sid, flask.session['displayName'])
+        # TODO: Add game and user to dynamodb. Maybe just call opulence._save_state()?
 
+        games_dict[game_id] = opulence # add the game to the games dict
+        flask.session['gameID'] = game_id # add the gameid to the clients flask session dict
 
-        games_dict[gameID] = opulence # add the game to the games dict
-        flask.session['gameID'] = gameID # add the gameid to the clients flask session dict
-        games_list[gameID] = {"gameID": gameID, "started": opulence.game_started, "users": opulence.player_names}
-        join_room(gameID) # join the flask room corresponding to the gameID of the newly created game
+        games_list[game_id] = {"gameID": game_id, "started": opulence.game_started, "users": opulence.player_names}
+        join_room(game_id) # join the flask room corresponding to the gameID of the newly created game
         emit('current-room-id', str(flask.session['gameID'])) # send the client what their current gameID is
         emit('list-games', games_list, broadcast=True)
-        emit('game-logs', opulence.game_logs.logs, room=gameID)
-        emit('game-data', opulence._get_game_data(), room=gameID)
-        emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
+        emit('game-logs', opulence.game_logs.logs, room=game_id)
+        emit('game-data', opulence._get_game_data(), room=game_id)
+        emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=game_id)
         emit('user-sid', sid)
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -361,6 +385,7 @@ def start_game():
     try:
         gameID = str(flask.session['gameID'])
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         
         if opulence.start_game(sid):
@@ -369,6 +394,7 @@ def start_game():
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('list-games', games_list, broadcast=True)
             emit('game-started', True, room=gameID)
+            emit('turn-timer', opulence.config.turn_timer, room=gameID)
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -380,7 +406,7 @@ def on_join(data):
         gameID = str(data['gameid'])
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
-
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
 
         # join as a spectator
@@ -414,7 +440,7 @@ def on_leave():
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         name = flask.session['displayName']
-
+        # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         opulence = games_dict[gameID]
         log("user left the room " + name)
         if opulence.remove_player(sid, name):
@@ -436,6 +462,11 @@ def on_leave():
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
 
+def emit_game_turn(opulence: Opulence, game_id):
+    # Helper function. Can't emit 'game-data' payload too big.
+    socketio.emit('current-turn-sid', opulence._get_current_turn_sid(), room=game_id)
+    socketio.emit('game-logs', opulence.game_logs.logs, room=game_id)
+    socketio.emit('turn-timer', opulence.config.turn_timer, room=game_id)
 
 
 if __name__ == '__main__':
@@ -445,6 +476,7 @@ if __name__ == '__main__':
         print("Flask server listening on port 5000!")
         # Set host="0.0.0.0" to be able to connect to docker container running this app externally (make the server externally visible). Default is 127.0.0.1
         socketio.run(app, host="0.0.0.0", port=5000)
+        
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")

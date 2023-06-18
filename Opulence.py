@@ -56,7 +56,7 @@ class Opulence:
                     },
                     "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
                                         #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
-                                        #drg_shop = :drg_shop, #ttl = :ttl, #config = :config",
+                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -65,8 +65,8 @@ class Opulence:
                         "#rt": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
-                        "#ttl": "TTL",
-                        "#config": "config"
+                        "#time_to_live": "TTL",
+                        "#game_config": "config"
 
                     },
                     "ExpressionAttributeValues": {
@@ -79,8 +79,7 @@ class Opulence:
                         ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
                         ":config": { "S": json.dumps(self.config.__dict__()) },
                         ":ttl": { "N": str(time_to_live) }
-                    },
-                    "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
+                    }
                 }
             }
         ]
@@ -101,7 +100,7 @@ class Opulence:
                                         #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                         #burn = :burn, #display_name = :display_name, #dead = :dead, \
                                         #shield = :shield, \
-                                        #ttl = :ttl",
+                                        #time_to_live = :ttl",
                     "ExpressionAttributeNames": {
                         "#hp": "hp",
                         "#runes": "runes",
@@ -113,7 +112,7 @@ class Opulence:
                         "#display_name": "display_name",
                         "#dead": "is_dead",
                         "#shield": "shield",
-                        "#ttl": "TTL"
+                        "#time_to_live": "TTL"
                     },
                     "ExpressionAttributeValues": {
                         ":hp": { "N": str(player.hp) },
@@ -134,7 +133,7 @@ class Opulence:
         try:
             resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
         except Exception as e:
-            print("Failed to save game state", e)
+            print("Failed to save individual player game state", e)
             return None
         return resp
 
@@ -156,7 +155,7 @@ class Opulence:
                     },
                     "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
                                         #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
-                                        #drg_shop = :drg_shop, #ttl = :ttl, #config = :config",
+                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -165,8 +164,8 @@ class Opulence:
                         "#rt": "runes_taken",
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
-                        "#ttl": "TTL",
-                        "#config": "config"
+                        "#time_to_live": "TTL",
+                        "#game_config": "config"
 
                     },
                     "ExpressionAttributeValues": {
@@ -179,8 +178,7 @@ class Opulence:
                         ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
                         ":config": { "S": json.dumps(self.config.__dict__()) },
                         ":ttl": { "N": str(time_to_live) }
-                    },
-                    "ReturnValuesOnConditionCheckFailure": "ALL_OLD"
+                    }
                 }
             }
         ]
@@ -204,7 +202,7 @@ class Opulence:
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                             #burn = :burn, #display_name = :display_name, #dead = :dead, \
                                             #shield = :shield, \
-                                            #ttl = :ttl",
+                                            #time_to_live = :ttl",
                         "ExpressionAttributeNames": {
                             "#hp": "hp",
                             "#runes": "runes",
@@ -216,7 +214,7 @@ class Opulence:
                             "#display_name": "display_name",
                             "#dead": "is_dead",
                             "#shield": "shield",
-                            "#ttl": "TTL"
+                            "#time_to_live": "TTL"
                         },
                         "ExpressionAttributeValues": {
                             ":hp": { "N": str(player.hp) },
@@ -230,7 +228,7 @@ class Opulence:
                             ":dead": { "BOOL": player.isDead },
                             ":shield": { "S": json.dumps(player.shield.__dict__()) },
                             ":ttl": { "N": time_to_live}
-                        },
+                        }
                     }
                 }
             )
@@ -268,7 +266,8 @@ class Opulence:
                                 cards_in_shop=config['cards_in_shop'],
                                 runes_per_turn=config['runes_per_turn'],
                                 dragons_in_shop=config['drags_in_shop'],
-                                player_starting_health=config['starting_hp'])
+                                player_starting_health=config['starting_hp'],
+                                turn_timer=config['turn_timer'])
         self.card_shop      = CardShop(data=card_shop_data['cards'], config=Config())
         self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=Config())
         self.game_over      = game_data['game_over']['BOOL']
@@ -281,8 +280,7 @@ class Opulence:
         for index, player in enumerate(player_data):
             sid = player['SK']['S'].split('USER#')[1]
             name = player['display_name']['S']
-            hp = player['hp']['N']
-            self.players[sid] = Player(sid, name=name, hp=hp, data=player_data[index])
+            self.players[sid] = Player(sid, name=name, data=player_data[index])
             self.player_sids.append(sid)
 
 
@@ -316,9 +314,10 @@ class Opulence:
             self.game_logs.start_game_log(self.players[sid].display_name, self.players[sid2].display_name)
 
             # Create a timer thread to run _next_turn() after x seconds
-            self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+            self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False, True])
             # Start the timer
             self.turn_timer.start()
+            # self.turn_timer.start()
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
@@ -523,7 +522,7 @@ class Opulence:
             for id, p in self.players.items()
         }
 
-    def _next_turn(self, player: Player=None, player_left_during_turn=False):
+    def _next_turn(self, player: Player=None, player_left_during_turn=False, timer_expired=False):
         """
         player: The player whose turn it was before _next_turn is called.
         """
@@ -574,11 +573,13 @@ class Opulence:
 
         # Save game state:
         self._save_player_state(player=player) if self.boring_turn else print(self._save_state())
-            
-
+        
+        if timer_expired:
+            from main import emit_game_turn
+            emit_game_turn(self, self.game_id)
         # Restart the turn timer
         self.turn_timer.cancel()
-        self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False])
+        self.turn_timer = Timer(self.config.turn_timer, self._next_turn, args=[self.players[self.player_sids[self.turn]], False, True])
         self.turn_timer.start()
         print(f"Active threads: {len(threading.enumerate())} ")
     
@@ -618,6 +619,7 @@ class Opulence:
         if not players_alive:
             self.game_logs.winner_log(sid=None)
             self.tied_game = True
+            # self._update_user_data()
             return True
 
         if len(players_alive) == 1:
@@ -625,7 +627,7 @@ class Opulence:
             list(players_alive.values())[0].won = True
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
-            self._update_user_data()
+            # self._update_user_data()
             return True
         return False
     
@@ -633,6 +635,8 @@ class Opulence:
         """
         Update all players stats that were in the game
         """
+        # TODO: Need to update dynamodb table to explictly contain the attributes listed in this functions update expressions
+        print("UPDATING USER DATA")
         transact_items = []
         for id, player in self.players.items():
             wins = 1 if player.won else 0
@@ -649,12 +653,12 @@ class Opulence:
                         },
                         "UpdateExpression": "SET #wins = #wins + :wins, \
                                             #dragons = #dragons + :dragons, \
-                                            #leg_cards = #leg_cards + :leg_cards, \
+                                            #leg_cards = #leg_cards + :leg_cards \
                                             ",
                         "ExpressionAttributeNames": {
                             "#wins": "games_won",
                             "#dragons": "dragons_owned",
-                            "#leg_cards": "legendary_cards_bought",
+                            "#leg_cards": "leg_cards_bought",
                         },
                         "ExpressionAttributeValues": {
                             ":wins": { "N": str(wins) },
@@ -676,12 +680,12 @@ class Opulence:
                         },
                         "UpdateExpression": "SET #won = :won, \
                                             #dragons = :dragons, \
-                                            #leg_cards = :leg_cards, \
+                                            #leg_cards = :leg_cards \
                                             ",
                         "ExpressionAttributeNames": {
                             "#won": "won",
                             "#dragons": "dragons_owned",
-                            "#leg_cards": "legendary_cards_bought",
+                            "#leg_cards": "leg_cards_bought",
                         },
                         "ExpressionAttributeValues": {
                             ":won": { "BOOL": player.won },
@@ -695,6 +699,7 @@ class Opulence:
             resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
         except Exception as e:
             print("Failed to save game state", e)
+            print("REASON: ", e.response.get("CancellationReasons"))
             return None
         return resp
 
