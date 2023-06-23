@@ -106,6 +106,7 @@ def on_client_disconnect():
                 if opulence.game_started and not opulence.game_over: 
                     emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
                     emit('turn-timer', opulence.config.turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
 
 # emit to the clients when a user selects an attack card they want to play
 @socketio.on('attack-card-selected')
@@ -179,6 +180,7 @@ def take_rune(data):
                     emit('game-over', opulence.game_logs.winner, room=gameID)
                     turn_timer = 0
                 emit('turn-timer', turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -231,6 +233,7 @@ def play_card(data):
                         emit('play-sound', 'play_shield', room=gameID)
                     opulence.game_logs.played_card = None
                 emit('turn-timer', turn_timer, room=gameID)
+                opulence.game_logs.logs = [] # clear logs for next action
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -262,6 +265,7 @@ def buy_card(data):
                 turn_timer = 0
 
             emit('turn-timer', turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -295,6 +299,7 @@ def craft_card(data):
                 turn_timer = 0
 
             emit('turn-timer', turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
 
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
@@ -328,6 +333,7 @@ def buy_dragon(data):
                 turn_timer = 0
             
             emit('turn-timer', turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -346,11 +352,12 @@ def play_button(data):
 @socketio.on('create-game')
 def create_game(data):
     try:
-        max_players = min(99, max(2, data.get('maxplayers', 8))) if isinstance(data.get('maxplayers', 8), int) else 8
-        runes_per_turn = min(99, max(1, data.get('runesperturn', 5))) if isinstance(data.get('runesperturn', 5), int) else 5
-        dragons_in_shop = min(99, max(0, data.get('totaldragons', 2))) if isinstance(data.get('totaldragons', 2), int) else 2
-        cards_in_shop = min(20, max(0, data.get('cardsinshop', 5))) if isinstance(data.get('cardsinshop', 5), int) else 5
-        player_starting_hp = min(99, max(1, data.get('startinghealth', 10))) if isinstance(data.get('startinghealth', 10), int) else 10
+        max_players = min(99, max(2, data.get('maxplayers', 8))) if isinstance(data.get('maxplayers'), int) else 8
+        runes_per_turn = min(99, max(1, data.get('runesperturn', 5))) if isinstance(data.get('runesperturn'), int) else 5
+        dragons_in_shop = min(99, max(0, data.get('totaldragons', 2))) if isinstance(data.get('totaldragons'), int) else 2
+        cards_in_shop = min(20, max(0, data.get('cardsinshop', 5))) if isinstance(data.get('cardsinshop'), int) else 5
+        player_starting_hp = min(99, max(1, data.get('startinghealth', 10))) if isinstance(data.get('startinghealth'), int) else 10
+        turn_timer = min(10000, max(1, data.get('turntimer', 30))) if isinstance(data.get('turntimer'), int) else 30
 
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
@@ -359,7 +366,8 @@ def create_game(data):
             runes_per_turn=runes_per_turn,
             dragons_in_shop=dragons_in_shop,
             cards_in_shop=cards_in_shop,
-            player_starting_health=player_starting_hp
+            player_starting_health=player_starting_hp,
+            turn_timer=turn_timer
             ))
         game_id = opulence.game_id
         opulence.game_logs.create_game_log(name, game_id)
@@ -377,6 +385,7 @@ def create_game(data):
         emit('game-data', opulence._get_game_data(), room=game_id)
         emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=game_id)
         emit('user-sid', sid)
+        opulence.game_logs.logs = [] # clear logs for next action
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -395,6 +404,7 @@ def start_game():
             emit('list-games', games_list, broadcast=True)
             emit('game-started', True, room=gameID)
             emit('turn-timer', opulence.config.turn_timer, room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -419,6 +429,7 @@ def on_join(data):
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
 
         elif opulence.add_player(sid, name):
             log(f"added {name} to game")
@@ -429,6 +440,7 @@ def on_join(data):
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
@@ -458,12 +470,13 @@ def on_leave():
                 # if the game is started, emit the next persons turn. It could have been the turn of the person who left
                 if opulence.game_started and not opulence.game_over:
                     emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+            opulence.game_logs.logs = [] # clear logs for next action
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
 
 def emit_game_turn(opulence: Opulence, game_id):
-    # Helper function. Can't emit 'game-data' payload too big.
+    # Helper function. Can't emit 'game-data'. payload too big.
     socketio.emit('current-turn-sid', opulence._get_current_turn_sid(), room=game_id)
     socketio.emit('game-logs', opulence.game_logs.logs, room=game_id)
     socketio.emit('turn-timer', opulence.config.turn_timer, room=game_id)

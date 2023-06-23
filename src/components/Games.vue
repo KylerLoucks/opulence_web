@@ -43,10 +43,19 @@
     height: max-content;
     
     width: 25em;
-    height: 70px;
-    background-color: #515862;
+    height: 170px;
+    background: transparent;
     border-radius: .25rem;
+    transition: 1s;
+    padding: 10px 30px;
+    letter-spacing: .1em;
 
+    }
+
+    .container:hover {
+        background: linear-gradient(to top, #ffffff39, rgba(255, 255, 255, 0.319));
+        letter-spacing: 0.2em;
+        box-shadow: 0 10px 25px #7c21f4;
     }
 
     .game-data-container {

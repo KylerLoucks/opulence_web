@@ -619,7 +619,7 @@ class Opulence:
         if not players_alive:
             self.game_logs.winner_log(sid=None)
             self.tied_game = True
-            # self._update_user_data()
+            self._update_user_data()
             return True
 
         if len(players_alive) == 1:
@@ -627,7 +627,7 @@ class Opulence:
             list(players_alive.values())[0].won = True
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
-            # self._update_user_data()
+            self._update_user_data()
             return True
         return False
     
@@ -635,7 +635,6 @@ class Opulence:
         """
         Update all players stats that were in the game
         """
-        # TODO: Need to update dynamodb table to explictly contain the attributes listed in this functions update expressions
         print("UPDATING USER DATA")
         transact_items = []
         for id, player in self.players.items():
@@ -643,6 +642,7 @@ class Opulence:
             dragons_owned = player.dragons_owned
             legendary_cards_bought = player.leg_cards_bought
 
+            # Use ADD expression to increment/add values that don't exist
             transact_items.append(
                 {
                     "Update": {
@@ -651,10 +651,9 @@ class Opulence:
                             "PK": { "S": f"USER#{player.sid}" },
                             "SK": { "S": f"USER#{player.sid}" },
                         },
-                        "UpdateExpression": "SET #wins = #wins + :wins, \
-                                            #dragons = #dragons + :dragons, \
-                                            #leg_cards = #leg_cards + :leg_cards \
-                                            ",
+                        "UpdateExpression": "ADD #wins :wins, \
+                                            #dragons :dragons, \
+                                            #leg_cards :leg_cards",
                         "ExpressionAttributeNames": {
                             "#wins": "games_won",
                             "#dragons": "dragons_owned",
@@ -699,7 +698,7 @@ class Opulence:
             resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
         except Exception as e:
             print("Failed to save game state", e)
-            print("REASON: ", e.response.get("CancellationReasons"))
+            # print("REASON: ", e.response.get("CancellationReasons"))
             return None
         return resp
 

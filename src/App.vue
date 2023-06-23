@@ -36,9 +36,11 @@
     
     <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
       <h2>Select a game from the list or create one</h2>
-        <div class="games-container">
-          <Games class='games' v-for="game in gamesList" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
-        </div>
+      <GamesMenu :games="gamesList"></GamesMenu>
+
+      <!-- <div class="games-container">
+        <Games class='games' v-for="game in gamesList" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
+      </div> -->
     </div>
     <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
     
@@ -77,6 +79,12 @@
             </span>
             <input class="config-input" v-model="configPlayerStartHealth" type="number" placeholder="10" maxlength="3" min="1">
           </div>
+          <div class="input-game-config">
+            <span>Turn Timer (Seconds)
+              <fa icon="fa-solid fa-stopwatch" size="lg" class="timer-icon" />
+            </span>
+            <input class="config-input" v-model="configTurnTimer" type="number" placeholder="30" maxlength="4" min="10">
+          </div>
         </div>
         <button class="game-config-modal-button" v-on:click="createGame(), showGameConfigModal = false">Create Lobby</button>
       </div>
@@ -88,7 +96,8 @@
         <template v-for="(user, index) in current_game_users" :key="index">
           <template v-if="user.sid == this.currentTurnSid">
             <span class="banner-current-turn">Current Turn: {{user.display_name}}</span>
-            <span class="banner-turn-timer">Turn Timer: {{ this.turnMinute + " : " + this.turnSecond }}</span>
+            <fa icon="fa-solid fa-stopwatch" size="lg" class="timer-icon" />
+            <span class="banner-turn-timer"> {{ this.turnHour !== '0' && this.turnHour !== '00' ? `${this.turnHour} : ${this.turnMinute} : ${this.turnSecond} ` : `${this.turnMinute} : ${this.turnSecond}` }}</span>
           </template>
         </template>
     </div>
@@ -344,7 +353,7 @@
   // import { ref } from "vue";
   
   import HpBar from "./components/HpBar.vue";
-  import Games from "./components/Games.vue";
+  // import Games from "./components/Games.vue";
   import LegendaryShopCards from "./components/LegendaryShopCards.vue";
   import DragonCards from "./components/DragonCards.vue";
   import Crafting from "./components/Crafting.vue";
@@ -354,6 +363,7 @@
   import ClientSidePlayerCards from "./components/ClientSidePlayerCards.vue";
   import Authenticate from "./components/authenticate/Authenticate.vue"
   import PageLoader from "./components/PageLoader.vue";
+  import GamesMenu from "./components/pagination/GamesMenu.vue";
 
   import { userPool } from "./components/authenticate/UserPool"
 
@@ -367,7 +377,7 @@
     components: {
       HpBar,
       ShieldBar,
-      Games,
+      // Games,
       LegendaryShopCards,
       DragonCards,
       Crafting,
@@ -375,7 +385,8 @@
       Sidebar,
       ClientSidePlayerCards,
       Authenticate,
-      PageLoader
+      PageLoader,
+      GamesMenu,
     },
     setup() {
       // const hp = ref(0);
@@ -399,13 +410,17 @@
         
         shield_colors: [{"FIRE": "#dd221e"}, {"WATER":"#3f7ab6"}, {"DARK": "#200f34"}, {"WIND": "#b7b7b7"}, {"ARCANE": "#7332b7"}, {"EARTH": "#865b38"}, {"SOLAR": "#c9721f"}, {"NATURE":"#5ec234"}],
   
-        gamesList: {"1": {"gameID": "1", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}},
+        gamesList: {"1": {"gameID": "1", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "2": {"gameID": "2", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "5": {"gameID": "5", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "6": {"gameID": "6", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "8": {"gameID": "8", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "9": {"gameID": "2", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "10": {"gameID": "10", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "11": {"gameID": "11", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}
+        },
   
         // cards: {"1":{"runeVal":5,"spellVal":3,"runeType":"fire","spellType":1,"cost":{"wind":2,"fire":5,"earth":10,"water":2,"nature":3,"solar":8}},"2":{"runeVal":7,"spellVal":6,"runeType":"solar","spellType":2,"cost":{"wind":2,"solar":7,"water":3}},"3":{"runeVal":9,"spellVal":10,"runeType":"water","spellType":1,"cost":{"wind":2,"nature":10}},"4":{"runeVal":8,"spellVal":8,"runeType":"arcane","spellType":2,"cost":{"arcane":8,"solar":5,"water":3}},"5":{"runeVal":10,"spellVal":4,"runeType":"nature","spellType":1,"cost":{"earth":10,"water":3,"solar":5,"dark":6}},"6":{"runeVal":3,"spellVal":1,"runeType":"wind","spellType":1,"cost":{"dark":8,"water":11}},"7":{"runeVal":6,"spellVal":9,"runeType":"wind","spellType":1,"cost":{"wind":2}},"8":{"runeVal":4,"spellVal":5,"runeType":"wind","spellType":1,"cost":{"dark":10,"solar":5,"fire":11,"wind":2}}},
         // dragons: {"Deep-sea Dragon": {"cost": {"water": 20,"dark": 20},"icon": "Deep-sea_Dragon.png","shield": 8,"damage": 2}, "Nova Dragon": {"cost": {"fire": 20,"solar": 20},"icon": "Nova_Dragon.png","shield": 8,"damage": 2}, "Swamp Dragon": {"cost": {"water": 20,"nature": 20},"icon": "Swamp_Dragon.png","shield": 8,"damage": 2},"Cloud Dragon": {"cost": {"water": 20,"wind": 20},"icon": "Cloud_Dragon.png","shield": 8,"damage": 2},},
         // users: {"1822372397923":{"health":12,"shield":5,"shieldType":"fire","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80},"391234972397":{"health":10,"shield":5,"shieldType":"water","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80}, "59123492397":{"health":10,"shield":5,"shieldType":"water","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80}, "15123492397":{"health":10,"shield":5,"shieldType":"water","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80}, "11113492397":{"health":10,"shield":5,"shieldType":"water","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80}, "2222492397":{"health":10,"shield":5,"shieldType":"water","runes":{"fire":1,"water":2,"earth":5,"arcane":3,"nature":3,"solar":6,"dark":2,"wind":2},"timer":80}},
         logs: [":arcane:", ":fire: runes", 'log2', 'log3', 'log4', 'log5 took a :fire: rune worth x6 affinity and played a card to deal x5 :solar: to everyone', 'log6', 'log7', 'log8', 'log9', 'log10', 'log11', 'log12', 'log13', 'log14',
-        ":fire: runes", 'log2', 'log3', 'log4', 'log5', '1','2','3','4','5','6','7','8','9','10','11','12','13'],
+        ":fire: runes"],
         
         
         isTurn: false,
@@ -456,6 +471,7 @@
         configRunesPerTurn: 5,
         configPlayerStartHealth: 10,
         configMaxPlayers: 8,
+        configTurnTimer: 30,
         
   
       }
@@ -529,15 +545,16 @@
   
       createGame: function() {
         this.socket.emit('create-game', 
-        {'maxplayers': this.configMaxPlayers,
-        "cardsinshop": this.configShopSize,
-        "runesperturn": this.configRunesPerTurn,
-        "totaldragons": this.configTotalDragons,
-        "startinghealth": this.configPlayerStartHealth})
+        {maxplayers: this.configMaxPlayers,
+        cardsinshop: this.configShopSize,
+        runesperturn: this.configRunesPerTurn,
+        totaldragons: this.configTotalDragons,
+        startinghealth: this.configPlayerStartHealth,
+        turntimer: this.configTurnTimer})
         
         console.log('created a game')
         console.log('player health: ' + this.configPlayerStartHealth)
-        this.ingame = true; // place the user in the game they create the game
+        this.ingame = true;
         
       },
   
@@ -563,15 +580,18 @@
         this.gameStarted = this.gamesList[id].started
         console.log(`"joined room id: ${id}"`)
       },
+
       leaveRoom: function() { // emits to the server with the roomId to leave (only handled on server side)
+        this.clearTurnTimer()
         this.socket.emit('leave-room')
         this.ingame = false
         this.current_room_id = null
         this.showHandModal = false
         this.gameStarted = false
         this.isTurn = false // make buttons greyed-out
-        this.logs = []
+        this.logs = [];
       },
+
       startGame: function() { // emits to the server with the roomId to leave (only handled on server side)
         this.socket.emit('start-game')
         this.gameStarted = true
@@ -631,6 +651,25 @@
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
 
+      /**
+       * clear the countdown timer (reset to 0)
+       */
+      clearTurnTimer() {
+        if (this.timerId) {
+          console.log("CLEARING TIMER")
+          clearInterval(this.timerId)
+        }
+        this.turnSecond = '0',
+        this.turnMinute = '0',
+        this.turnHour = '0',
+        this.turnDay = '0',
+        this.countDate = null
+      },
+
+      /**
+       * Starts a countdown timer
+       * @param {*} countDate unix epoch formatted date (e.g. 1687110770)
+       */
       countDown(countDate) {
         
         const now = new Date().getTime();
@@ -703,7 +742,6 @@
 
       // Handle turn timer
       this.socket.on('turn-timer', (timer) => {
-        
         this.countDate = new Date().getTime() + (timer > 0 ? timer + 1 : timer) * 1000;
         this.timerId = setInterval(() => {
           this.countDown(this.countDate)
@@ -1020,7 +1058,7 @@
   }
 
   .game-banner .banner-turn-timer {
-    margin-left: 5em;
+    margin-left: .5em;
   }
 
   .opulence-banner{

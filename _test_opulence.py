@@ -2,6 +2,7 @@ import json
 from Config import Config
 from game_objects import *
 from opulence import Opulence
+from dynamodb_controller import DynamoDBController
 # from shop import *
 # from game_logs import GameLogs
 import datetime
@@ -41,6 +42,7 @@ def test_dynamodb_save_state():
     o.add_player("player1")
     o.players['player1'].add_card()
     o.players['player1'].add_dragon()
+    o.start_game('player1')
     o._next_turn(o.players["player2"])
 
 def test_dynamodb_load_state():
@@ -48,11 +50,16 @@ def test_dynamodb_load_state():
     o._load_game_state()
     print(o.player_sids)
 
+def test_dynamodb_controller():
+    ddb = DynamoDBController()
+    ddb.find_games(2)
+
 
 if __name__ == "__main__":
     # test_dynamodb_save_state()
+
     # test_dynamodb_load_state()
-    test_basic_game()
+    # test_basic_game()
     print("working!")
     
     # games[i] = o

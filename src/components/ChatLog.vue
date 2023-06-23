@@ -84,7 +84,8 @@
     },
 
     mounted: function() {
-        this.regexReplaceInnerHTML()
+        if (this.logs.size > 0)
+            this.regexReplaceInnerHTML()
     },
 
     updated: function() {

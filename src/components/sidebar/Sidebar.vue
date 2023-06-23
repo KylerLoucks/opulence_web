@@ -3,7 +3,7 @@
         <span :id="closed ? 'collapse-icon' : 'rotate-180'" class="material-icons" @click="closed = !closed">chevron_right</span>
         <ChatLog class="chat-logs" :logs="logs"></ChatLog>
 
-        <button class="leave-room-btn" v-on:click="!closed ? $emit('leaveRoom', leaveRoom) : ''">
+        <button class="leave-room-btn" v-on:click="$emit('leaveRoom', leaveRoom)">
             <span id="leave-icon" class="material-icons">logout</span>
             <span v-show="!closed" class="leave-txt">Leave</span>
         </button>

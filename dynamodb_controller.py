@@ -1,3 +1,4 @@
+from decimal import Decimal
 import boto3
 import json
 import time
@@ -10,9 +11,9 @@ from ulid import ULID
 class DynamoDBController:
     def __init__(self):
 
-        self.dynamodb = boto3.resource('dynamodb', region_name="us-east-1")
+        self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
 
-        self.table = self.dynamodb.Table("testdatapksk")
+        self.table = "testdatapksk"
 
 # logs = []
 
@@ -20,7 +21,7 @@ class DynamoDBController:
 #     logs.append(f"averageplayername took 10x :arcane: damage to their shield and 20x :arcane: damage to their health.{i}")
     def update_logs(self):
         try:
-            response = self.table.update_item(
+            response = self.dynamodb.update_item(
                     Key={
                         'PK': 'GAME#12345'
                     },
@@ -37,9 +38,9 @@ class DynamoDBController:
             return "Couldn't update item"
         return response
 
-    # get a game by ID
+    # get a game by ID (useful for searching for a single game to join)
     def get_game(self, id: str=None):
-        response = self.table.get_item(
+        response = self.dynamodb.get_item(
             Key={
                 'PK': f"GAME#{id}",
                 'SK': f"GAME#{id}"
@@ -50,14 +51,9 @@ class DynamoDBController:
         )
         return response
 
-    def create_game(self):
-        self.table.put_item(
-
-        )
-
     # Grab game by GameID and the users in the game
     def fetch_game_and_users(self, game_id):
-        resp = self.table.query(
+        resp = self.dynamodb.query(
             TableName='testdatapksk',
             KeyConditionExpression="PK = :game",
             ExpressionAttributeValues={
@@ -67,13 +63,11 @@ class DynamoDBController:
             ReturnConsumedCapacity='TOTAL',
         )
 
-        # games = [Game(item) for item in resp['Items']]
-
         return resp
 
     # Grab users in a Game by the GameID
     def fetch_users_in_game(self, game_id):
-        resp = self.table.query(
+        resp = self.dynamodb.query(
             TableName='testdatapksk',
             KeyConditionExpression="PK = :game and begins_with(SK, :user)",
             ExpressionAttributeValues={
@@ -84,15 +78,10 @@ class DynamoDBController:
             ReturnConsumedCapacity='TOTAL',
         )
 
-        # games = [Game(item) for item in resp['Items']]
-
         return resp
 
-# games = fetch_users_in_game(game_id="01GPEV315ASJQK3PRMAW94XCQG")
-# print(f"Users in GameID '01GPEV315ASJQK3PRMAW94XCQG':\n {games}")
-
     def find_Joinable_games(self, limit):
-        resp = self.table.query(
+        resp = self.dynamodb.query(
             TableName='testdatapksk',
             IndexName='OpenGamesIndex',
             KeyConditionExpression="#started = :startedVal",
@@ -108,13 +97,38 @@ class DynamoDBController:
             Limit=limit,
             ReturnConsumedCapacity='TOTAL',
         )
-
-        # games = [Game(item) for item in resp['Items']]
-
         return resp
+    
+    # Find all games that are currently active
+    def find_games(self, limit, start_key=None):
+        try:
+            scan_params = {
+                'TableName': 'testdatapksk',
+                'IndexName': 'OpenGamesIndex',
+                'Limit': limit,
+                'ReturnConsumedCapacity': 'TOTAL'
+            }
+
+            if start_key:
+                scan_params['ExclusiveStartKey'] = start_key
+
+            resp = self.dynamodb.scan(**scan_params)
+            return resp
+        except Exception as e:
+            print("failed to scan database: ", e)
+            print("REASON: ", e.response.get("CancellationReasons"))
+
+
 
 controller = DynamoDBController()
-data = controller.fetch_game_and_users(game_id="01GPEV315ASJQK3PRMAW94XCQG")
+data = controller.find_games(3)
+pprint.pprint(data)
+
+last_key = data.get('LastEvaluatedKey')
+data = controller.find_games(3, last_key)
+# pprint.pprint(data.get('LastEvaluatedKey'))
+
+# data = controller.fetch_game_and_users(game_id="01GPEV315ASJQK3PRMAW94XCQG")
 pprint.pprint(data)
 
 
