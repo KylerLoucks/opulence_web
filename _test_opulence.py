@@ -52,14 +52,20 @@ def test_dynamodb_load_state():
 
 def test_dynamodb_controller():
     ddb = DynamoDBController()
-    ddb.find_games(2)
+    response = ddb.find_games(limit=1)
+    last_key = response.get('LastEvaluatedKey')
+    deserialized = ddb.deserialize(data=response['Items'])
+    data = ddb.convert_decimal_to_int(deserialized)
+    return data
 
 
 if __name__ == "__main__":
-    # test_dynamodb_save_state()
+    test_dynamodb_save_state()
 
     # test_dynamodb_load_state()
     # test_basic_game()
+    # games = test_dynamodb_controller()
+    # print("GAMES", games['Items'])
     print("working!")
     
     # games[i] = o

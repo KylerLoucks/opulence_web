@@ -1,7 +1,7 @@
 <template>
 
 <div class="parent-container">
-  <Games class='games' v-for="game in displayedDict" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
+  <Games class='games' v-for="game in displayedDict" :id="game.PK" :users="game.users" :started="game.started" :key="game.PK" @joinRoom="joinRoom" ></Games>
   <div>{{ page }}</div>
   <Pagination
     v-model="page"
@@ -9,6 +9,7 @@
     :margin-pages="1"
     :page-range="2"
     :no-li-surround="true"
+    :first-last-button="true"
     @page-change="handlePageChange"
   ></Pagination>
 </div>
@@ -28,6 +29,7 @@ export default {
   },
   props: { // variables when instantiating this component
     games: Object,
+    nextToken: Object,
   },
   setup() {
     return {
@@ -39,10 +41,11 @@ export default {
     return {
       page: 1,
       itemsPerPage: 2,
-      nextToken: true
+      // nextToken: true
     }
   },
   computed: {
+    // Slice the list of values depending on the page index
     displayedDict() {
       const itemArray = Object.values(this.games);
       const start = (this.page - 1) * this.itemsPerPage;

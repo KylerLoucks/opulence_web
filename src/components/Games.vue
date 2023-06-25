@@ -1,8 +1,8 @@
 <template>
 
-    <button class="container" v-on:click="$emit('joinRoom', joinRoom)">
+    <button class="container" v-on:click="$emit('joinRoom', id.replace('GAME#', ''))">
         <div class="game-data-container">
-            <span class="idvalue">Game ID: {{id}}</span>
+            <span class="idvalue">Game ID: {{ id ? id.replace('GAME#', '') : ''}}</span>
             <span class="startedvalue">Started: {{started}}</span>
             <div class="total-users-container">
                 <span class="total-users">Users:</span> 
@@ -25,7 +25,7 @@
     props: { // variables when instantiating this component
         id: String,
         users: Array,
-        started: Boolean,
+        started: String,
     },
     setup() {
         return {
@@ -34,6 +34,10 @@
     },
     created: function() { // debugging the props
         console.log(this.users)
+    },
+
+    updated: function() {
+        
     }
 };
 </script>

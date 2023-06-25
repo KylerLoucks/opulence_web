@@ -169,7 +169,7 @@ class Opulence:
 
                     },
                     "ExpressionAttributeValues": {
-                        ":started": { "BOOL": self.game_started },
+                        ":started": { "S": str(self.game_started) },
                         ":runes_taken": { "N": str(self.runes_taken) },
                         ":game_over": { "BOOL": self.game_over },
                         ":turn": { "N": str(self.turn) },
@@ -271,7 +271,8 @@ class Opulence:
         self.card_shop      = CardShop(data=card_shop_data['cards'], config=Config())
         self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=Config())
         self.game_over      = game_data['game_over']['BOOL']
-        self.game_started   = game_data['started']['BOOL']
+        boolean_value       = game_data['started']['S'].lower() == 'true'
+        self.game_started   = boolean_value
         self.turn           = int(game_data['turn']['N'])
         self.tied_game      = game_data['tied_game']['BOOL']
         self.runes_taken    = int(game_data['runes_taken']['N'])

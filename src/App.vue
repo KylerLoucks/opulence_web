@@ -36,13 +36,10 @@
     
     <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
       <h2>Select a game from the list or create one</h2>
-      <GamesMenu :games="gamesList"></GamesMenu>
-
-      <!-- <div class="games-container">
-        <Games class='games' v-for="game in gamesList" :id="game.gameID" :users="game.users" :started="game.started" :key="game.gameID" @joinRoom="joinRoom(game.gameID)" ></Games>
-      </div> -->
+      <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
+      <GamesMenu v-if="gamesList" :games="gamesList" :next-token="nextToken" @joinRoom="joinRoom"></GamesMenu>
     </div>
-    <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
+    
     
     <transition name="config-fade" appear>
       <div class="game-config-overlay" v-if="showGameConfigModal" @click="showGameConfigModal = false"></div>
@@ -410,11 +407,13 @@
         
         shield_colors: [{"FIRE": "#dd221e"}, {"WATER":"#3f7ab6"}, {"DARK": "#200f34"}, {"WIND": "#b7b7b7"}, {"ARCANE": "#7332b7"}, {"EARTH": "#865b38"}, {"SOLAR": "#c9721f"}, {"NATURE":"#5ec234"}],
   
-        gamesList: {"1": {"gameID": "1", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "2": {"gameID": "2", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "5": {"gameID": "5", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "6": {"gameID": "6", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "8": {"gameID": "8", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "9": {"gameID": "2", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "10": {"gameID": "10", "started": false, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "11": {"gameID": "11", "started": true, "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}
+        gamesList: {"1": {"gameID": "1", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "2": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "5": {"gameID": "5", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "6": {"gameID": "6", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "8": {"gameID": "8", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "9": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+                  "10": {"gameID": "10", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "11": {"gameID": "11", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}
         },
+        // gamesList: null,
+        nextToken: null,
   
         // cards: {"1":{"runeVal":5,"spellVal":3,"runeType":"fire","spellType":1,"cost":{"wind":2,"fire":5,"earth":10,"water":2,"nature":3,"solar":8}},"2":{"runeVal":7,"spellVal":6,"runeType":"solar","spellType":2,"cost":{"wind":2,"solar":7,"water":3}},"3":{"runeVal":9,"spellVal":10,"runeType":"water","spellType":1,"cost":{"wind":2,"nature":10}},"4":{"runeVal":8,"spellVal":8,"runeType":"arcane","spellType":2,"cost":{"arcane":8,"solar":5,"water":3}},"5":{"runeVal":10,"spellVal":4,"runeType":"nature","spellType":1,"cost":{"earth":10,"water":3,"solar":5,"dark":6}},"6":{"runeVal":3,"spellVal":1,"runeType":"wind","spellType":1,"cost":{"dark":8,"water":11}},"7":{"runeVal":6,"spellVal":9,"runeType":"wind","spellType":1,"cost":{"wind":2}},"8":{"runeVal":4,"spellVal":5,"runeType":"wind","spellType":1,"cost":{"dark":10,"solar":5,"fire":11,"wind":2}}},
         // dragons: {"Deep-sea Dragon": {"cost": {"water": 20,"dark": 20},"icon": "Deep-sea_Dragon.png","shield": 8,"damage": 2}, "Nova Dragon": {"cost": {"fire": 20,"solar": 20},"icon": "Nova_Dragon.png","shield": 8,"damage": 2}, "Swamp Dragon": {"cost": {"water": 20,"nature": 20},"icon": "Swamp_Dragon.png","shield": 8,"damage": 2},"Cloud Dragon": {"cost": {"water": 20,"wind": 20},"icon": "Cloud_Dragon.png","shield": 8,"damage": 2},},
@@ -541,6 +540,7 @@
         this.playing = true
         this.socket.emit('play-button', {'username': String(this.userName)})
         console.log(this.userName)
+        this.socket.emit('query-games')
       },
   
       createGame: function() {
@@ -738,7 +738,10 @@
       //     elem.scrollTop = elem.scrollHeight;
       // }, 2000);
 
-
+      // this.socket.on('redis-test', (msg) => {
+      //   this.redisOtherUserData = msg
+      //   console.log(this.redisOtherUserData)
+      // });
 
       // Handle turn timer
       this.socket.on('turn-timer', (timer) => {
@@ -747,12 +750,7 @@
           this.countDown(this.countDate)
         }, 1000);
       })
-      
 
-      // this.socket.on('redis-test', (msg) => {
-      //   this.redisOtherUserData = msg
-      //   console.log(this.redisOtherUserData)
-      // });
 
 
       this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server
@@ -852,7 +850,8 @@
   
       // receive list of active games
       this.socket.on('list-games', (res) => {
-        this.gamesList = res
+        this.gamesList = res.games
+        this.nextToken = res.last_key
         console.log('Active Games: ' + JSON.stringify(res))
       });
   

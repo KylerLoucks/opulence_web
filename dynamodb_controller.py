@@ -1,5 +1,6 @@
 from decimal import Decimal
 import boto3
+from boto3.dynamodb.types import TypeDeserializer
 import json
 import time
 from datetime import datetime
@@ -117,25 +118,59 @@ class DynamoDBController:
         except Exception as e:
             print("failed to scan database: ", e)
             print("REASON: ", e.response.get("CancellationReasons"))
+    
+    # Deserialize dynamodb data types for more readable dictionaries
+    def deserialize(self, data):
+        if data is None:
+            return
+
+        deserializer = TypeDeserializer()
+        deserialized_data = []
+        for item in data:
+            python_data = {k: deserializer.deserialize(v) for k,v in item.items()}
+            deserialized_data.append(python_data)
+        return deserialized_data
+    
+    def convert_decimal_to_int(self, data):
+        updated_data = []
+        for item in data:
+            updated_item = {}
+            for key, value in item.items():
+                if isinstance(value, Decimal):
+                    updated_item[key] = int(value)
+                elif isinstance(value, list):
+                    updated_item[key] = self.convert_decimal_to_int(value)
+                elif isinstance(value, dict):
+                    updated_item[key] = self.convert_decimal_to_int(value.values())
+                else:
+                    updated_item[key] = value
+            updated_data.append(updated_item)
+        return updated_data
 
 
 
-controller = DynamoDBController()
-data = controller.find_games(3)
-pprint.pprint(data)
+# controller = DynamoDBController()
+# data = controller.find_games(3)
+# deserialized = controller.deserialize(data.get('Items'))
+# pprint.pprint(deserialized)
+# pprint.pprint(data)
 
-last_key = data.get('LastEvaluatedKey')
-data = controller.find_games(3, last_key)
+# last_key = data.get('LastEvaluatedKey')
+# data = controller.find_gaames(3, last_key)
 # pprint.pprint(data.get('LastEvaluatedKey'))
 
 # data = controller.fetch_game_and_users(game_id="01GPEV315ASJQK3PRMAW94XCQG")
-pprint.pprint(data)
+# pprint.pprint(data)
 
 
 # games = find_Joinable_games(limit=10)
 # print(games)
 
 # print("Test")
+
+
+
+
 
 
 # def test_datetime():

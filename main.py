@@ -13,6 +13,8 @@ import json
 from opulence import Opulence
 from Config import Config
 from GlobalMethods import log, error
+from dynamodb_controller import DynamoDBController
+import pprint
 import os
 # from dynamodb_controller import DynamoDBController
 
@@ -38,6 +40,8 @@ games_list={} # emitted to clients
 #     return flask.render_template('index.html')
 authenticated_users = {}
 
+ddb = DynamoDBController()
+
 @socketio.on("redis-test")
 def redis_test(data):
     print(f"Retrieved redis test data: {data}")
@@ -54,10 +58,20 @@ def client_connect():
     flask.session['displayName'] = ''
     emit('user-sid', sid)
     #  # TODO: Remove this call completely and instead create a function/API that queries dynamo and emits the games_list from the response.
-    emit('list-games', games_list, broadcast=True)
+    # emit('list-games', games_list, broadcast=True)
     # emit('Connection', 'Connected!') # Send 'Connection' data to the client
     
     log('client loaded the webpage: ' + str(sid))
+
+@socketio.on('query-games')
+def query():
+
+    response = ddb.find_games(limit=1)
+    last_key = response.get('LastEvaluatedKey')
+    deserialized = ddb.deserialize(data=response['Items'])
+    data = ddb.convert_decimal_to_int(deserialized) # Convert 'Decimal' objects to ints
+    pprint.pprint(data)
+    emit('list-games', {"games": data, "last_key": last_key})
 
 @socketio.on('auth')
 def authenticate(data):

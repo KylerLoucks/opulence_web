@@ -33,7 +33,7 @@
 
 
     <div :class="containerClass" v-else>
-      <button v-if="firstLastButton" @click="selectFirstPage()" @keyup.enter="selectFirstPage()" :class="[pageLinkClass, firstPageSelected() ? disabledClass : '']" tabindex="0" v-html="firstButtonText"></button>
+      <button v-if="firstLastButton" @click="selectFirstPage()" @keyup.enter="selectFirstPage()" :class="['page-buttons', firstPageSelected() ? disabledClass : '']" tabindex="0" v-html="firstButtonText"></button>
       <button v-if="!(firstPageSelected() && hidePrevNext)" @click="prevPage()" @keyup.enter="prevPage()" :class="['page-buttons', firstPageSelected() ? disabledClass : '']" tabindex="0" v-html="prevText"></button>
       
       <template v-for="page in pages" :key="page">
@@ -285,11 +285,11 @@
       box-shadow: 0 10px 25px #21f4bf;
     }
 
-    .page-buttons{
+    button.page-buttons{
       margin-inline: 5px;
-      font-size: 1.5em;
+      font-size: 1em;
       letter-spacing: 0.1em;
-      padding: 10px 30px;
+      padding: 10px 20px;
       color: #21f4bf;
       transition: 0.5s;
       border: none;

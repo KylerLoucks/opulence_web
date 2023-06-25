@@ -219,6 +219,49 @@ Resources:
         - DomainName: www.playopulence.com
           HostedZoneId: Z0949341G2O2M9659QXN
       ValidationMethod: DNS
+
+  dynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TableName: opulence-data
+      BillingMode: PROVISIONED
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 25
+        WriteCapacityUnits: 25
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: "S"
+        - AttributeName: SK
+          AttributeType: "S"
+        - AttributeName: started
+          AttributeType: "S"
+        - AttributeName: players
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: PK # Partition Key
+          KeyType: HASH
+        - AttributeName: SK # Sort Key
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: OpenGamesIndex
+          KeySchema:
+            - AttributeName: started # Partition Key
+              KeyType: HASH
+            - AttributeName: players # Sort Key
+              KeyType: RANGE
+          Projection: 
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 10
+            WriteCapacityUnits: 10
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: True
+      Tags:
+        - Key: Managed-By
+          Value: cloudformation
           
 Outputs:
   ELBHostedZoneID:
@@ -230,6 +273,8 @@ Outputs:
   ALBDNS:
     Description: "DNS name of the Application Load Balancer"
     Value: !GetAtt LoadBalancer.DNSName
+  opulenceEndpoint:
+    Value: !Sub https://playopulence.com
 
 
       
