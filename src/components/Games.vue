@@ -2,14 +2,14 @@
 
     <button class="container" v-on:click="$emit('joinRoom', id.replace('GAME#', ''))">
         <div class="game-data-container">
-            <span class="idvalue">Game ID: {{ id ? id.replace('GAME#', '') : ''}}</span>
-            <span class="startedvalue">Started: {{started}}</span>
-            <div class="total-users-container">
+            <div class="idvalue">Game ID: {{ id ? id.replace('GAME#', '') : ''}}</div>
+            <div class="startedvalue">Started: {{started}}</div>
+            <!-- <div class="total-users-container">
                 <span class="total-users">Users:</span> 
                 <div class="total-users" v-for="user in users" :key="user" >
                     <span>{{user}}</span>
                 </div>
-            </div>
+            </div> -->
         </div> 
         
         
@@ -33,7 +33,7 @@
         };
     },
     created: function() { // debugging the props
-        console.log(this.users)
+        // console.log(this.users)
     },
 
     updated: function() {

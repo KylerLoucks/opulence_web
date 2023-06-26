@@ -56,7 +56,8 @@ class Opulence:
                     },
                     "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
                                         #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
-                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config",
+                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config, \
+                                        #players = :players",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -66,11 +67,12 @@ class Opulence:
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
                         "#time_to_live": "TTL",
-                        "#game_config": "config"
+                        "#game_config": "config",
+                        "#players": "players"
 
                     },
                     "ExpressionAttributeValues": {
-                        ":started": { "BOOL": self.game_started },
+                        ":started": { "S": str(self.game_started) },
                         ":runes_taken": { "N": str(self.runes_taken) },
                         ":game_over": { "BOOL": self.game_over },
                         ":turn": { "N": str(self.turn) },
@@ -78,6 +80,7 @@ class Opulence:
                         ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
                         ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
                         ":config": { "S": json.dumps(self.config.__dict__()) },
+                        ":players": { "N": str(len(self.players))},
                         ":ttl": { "N": str(time_to_live) }
                     }
                 }
@@ -134,6 +137,7 @@ class Opulence:
             resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
         except Exception as e:
             print("Failed to save individual player game state", e)
+            print("FAIL REASON: ", e.response.get("CancellationReasons"))
             return None
         return resp
 
@@ -155,7 +159,8 @@ class Opulence:
                     },
                     "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
                                         #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
-                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config",
+                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config, \
+                                        #players = :players",
                     "ExpressionAttributeNames": {
                         "#started": "started",
                         "#go": "game_over",
@@ -165,7 +170,8 @@ class Opulence:
                         "#crd_shop": "card_shop",
                         "#drg_shop": "dragon_shop",
                         "#time_to_live": "TTL",
-                        "#game_config": "config"
+                        "#game_config": "config",
+                        "#players": "players"
 
                     },
                     "ExpressionAttributeValues": {
@@ -177,6 +183,7 @@ class Opulence:
                         ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
                         ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
                         ":config": { "S": json.dumps(self.config.__dict__()) },
+                        ":players": { "N": str(len(self.players))},
                         ":ttl": { "N": str(time_to_live) }
                     }
                 }
@@ -268,8 +275,8 @@ class Opulence:
                                 dragons_in_shop=config['drags_in_shop'],
                                 player_starting_health=config['starting_hp'],
                                 turn_timer=config['turn_timer'])
-        self.card_shop      = CardShop(data=card_shop_data['cards'], config=Config())
-        self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=Config())
+        self.card_shop      = CardShop(data=card_shop_data['cards'], config=self.config)
+        self.dragon_shop    = DragonShop(data=dragon_shop_data['dragons'], config=self.config)
         self.game_over      = game_data['game_over']['BOOL']
         boolean_value       = game_data['started']['S'].lower() == 'true'
         self.game_started   = boolean_value

@@ -41,7 +41,7 @@ class DragonShop(Shop):
                     "dragon": Dragon(
                         runes=[Rune[rune] for rune in item['dragon']['runes']],
                         type=DragonType[item['dragon']['type']]), # turn the type e.g. "FIRE" into the Enum: DragonType.FIRE
-                    "cost": item['cost']
+                    "cost": { Rune[key]: val for key, val in item['cost'].items() }
                 }
                 for item in self.data
             ]
@@ -101,7 +101,7 @@ class CardShop(Shop):
                         type=CardType[item['card']['type']],
                         affinity=item['card']['affinity'],
                         power=item['card']['power']), 
-                    "cost": item['cost']
+                    "cost": { Rune[key]: val for key, val in item['cost'].items() }
                 } for item in self.data
             ]
 

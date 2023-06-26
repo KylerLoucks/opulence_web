@@ -67,10 +67,10 @@ def client_connect():
 def query():
 
     response = ddb.find_games(limit=1)
+    pprint.pp(response)
     last_key = response.get('LastEvaluatedKey')
     deserialized = ddb.deserialize(data=response['Items'])
     data = ddb.convert_decimal_to_int(deserialized) # Convert 'Decimal' objects to ints
-    pprint.pprint(data)
     emit('list-games', {"games": data, "last_key": last_key})
 
 @socketio.on('auth')
@@ -109,11 +109,11 @@ def on_client_disconnect():
                 # TODO: Remove game from dynamodb instead. Also remove the user.
                 del games_list[gameID]
                 del games_dict[gameID]
-                emit('list-games', games_list, broadcast=True)
+                # TODO: test this
+                ddb.delete_game(game_id=gameID, users=opulence.player_sids)
                 turn_timer = 0
                 emit('turn-timer', turn_timer, room=gameID)
             elif len(opulence.players) > 0:
-                emit('list-games', games_list, broadcast=True)
                 emit('game-logs', opulence.game_logs.logs, room=gameID)
                 emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
                 # if the game is started, emit the next persons turn. It could have been the turn of the person who left
@@ -177,7 +177,7 @@ def take_rune(data):
         opulence = games_dict[gameID]
         rune = str(data)
         runes_taken = opulence.runes_taken
-        print("player " + sid + " tried taking " + rune)
+        print(f"player {sid} tried taking {rune}")
         if opulence.take_rune(sid, rune):
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the current_game_data to the client
@@ -386,7 +386,8 @@ def create_game(data):
         game_id = opulence.game_id
         opulence.game_logs.create_game_log(name, game_id)
         opulence.add_player(sid, flask.session['displayName'])
-        # TODO: Add game and user to dynamodb. Maybe just call opulence._save_state()?
+        opulence._save_state()         # Add game and user to dynamodb.
+
 
         games_dict[game_id] = opulence # add the game to the games dict
         flask.session['gameID'] = game_id # add the gameid to the clients flask session dict
@@ -394,7 +395,6 @@ def create_game(data):
         games_list[game_id] = {"gameID": game_id, "started": opulence.game_started, "users": opulence.player_names}
         join_room(game_id) # join the flask room corresponding to the gameID of the newly created game
         emit('current-room-id', str(flask.session['gameID'])) # send the client what their current gameID is
-        emit('list-games', games_list, broadcast=True)
         emit('game-logs', opulence.game_logs.logs, room=game_id)
         emit('game-data', opulence._get_game_data(), room=game_id)
         emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=game_id)
@@ -415,7 +415,6 @@ def start_game():
             games_list[gameID]['started'] = True
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
-            emit('list-games', games_list, broadcast=True)
             emit('game-started', True, room=gameID)
             emit('turn-timer', opulence.config.turn_timer, room=gameID)
             opulence.game_logs.logs = [] # clear logs for next action
@@ -431,14 +430,21 @@ def on_join(data):
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
+            games_dict[gameID] = opulence
 
         # join as a spectator
         if opulence.game_started:
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID
             emit('join-room')
-            emit('list-games', games_list, broadcast=True)
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
@@ -450,7 +456,6 @@ def on_join(data):
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID
             emit('join-room')
-            emit('list-games', games_list, broadcast=True)
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
@@ -476,9 +481,7 @@ def on_leave():
             if len(opulence.players) <= 0:
                 del games_list[gameID]
                 del games_dict[gameID]
-                emit('list-games', games_list, broadcast=True)
             elif len(opulence.players) > 0:
-                emit('list-games', games_list, broadcast=True)
                 emit('game-logs', opulence.game_logs.logs, room=gameID)
                 emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
                 # if the game is started, emit the next persons turn. It could have been the turn of the person who left

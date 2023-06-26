@@ -36,8 +36,8 @@
     
     <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
       <h2>Select a game from the list or create one</h2>
-      <button v-if="!ingame && AuthState.state.isAuthenticated || playing && !ingame" class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
-      <GamesMenu v-if="gamesList" :games="gamesList" :next-token="nextToken" @joinRoom="joinRoom"></GamesMenu>
+      <button class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
+      <GamesMenu :games="gamesList" :next-token="nextToken" @joinRoom="joinRoom"></GamesMenu>
     </div>
     
     
@@ -904,7 +904,6 @@
   
     // do things for when the DOM is already loaded
     updated: function() {
-      
       
       
     },

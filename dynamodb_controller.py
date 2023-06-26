@@ -14,7 +14,7 @@ class DynamoDBController:
 
         self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
 
-        self.table = "testdatapksk"
+        self.table = "testgamestate" # "testdatapksk"
 
 # logs = []
 
@@ -55,7 +55,7 @@ class DynamoDBController:
     # Grab game by GameID and the users in the game
     def fetch_game_and_users(self, game_id):
         resp = self.dynamodb.query(
-            TableName='testdatapksk',
+            TableName=self.table,
             KeyConditionExpression="PK = :game",
             ExpressionAttributeValues={
                 ":game": "GAME#{}".format(game_id),
@@ -69,7 +69,7 @@ class DynamoDBController:
     # Grab users in a Game by the GameID
     def fetch_users_in_game(self, game_id):
         resp = self.dynamodb.query(
-            TableName='testdatapksk',
+            TableName=self.table,
             KeyConditionExpression="PK = :game and begins_with(SK, :user)",
             ExpressionAttributeValues={
                 ":game": "GAME#{}".format(game_id),
@@ -83,7 +83,7 @@ class DynamoDBController:
 
     def find_Joinable_games(self, limit):
         resp = self.dynamodb.query(
-            TableName='testdatapksk',
+            TableName=self.table,
             IndexName='OpenGamesIndex',
             KeyConditionExpression="#started = :startedVal",
             ExpressionAttributeNames={
@@ -104,7 +104,7 @@ class DynamoDBController:
     def find_games(self, limit, start_key=None):
         try:
             scan_params = {
-                'TableName': 'testdatapksk',
+                'TableName': self.table,
                 'IndexName': 'OpenGamesIndex',
                 'Limit': limit,
                 'ReturnConsumedCapacity': 'TOTAL'
@@ -117,10 +117,43 @@ class DynamoDBController:
             return resp
         except Exception as e:
             print("failed to scan database: ", e)
-            print("REASON: ", e.response.get("CancellationReasons"))
+            print("FAIL REASON: ", e.response.get("CancellationReasons"))
+    
+    def delete_game(self, game_id, users):
+        '''
+        Delete all game and user records tied to a game.
+        '''
+        try:
+            delete_items = [
+                {
+                    'PK': { "S": f'GAME#{game_id}' },
+                    'SK': { "S": f'GAME#{game_id}' },
+                }
+            ]
+
+            # for user in users:
+            #     delete_items.append(
+            #         {
+            #             'PK': { "S": f'GAME#{game_id}' },
+            #             'SK': { "S": f'USER#{user} }'
+            #         }
+            #     )
+            
+            self.dynamodb.batch_write_item(
+                RequestItems={
+                    self.table: delete_items
+                }
+            )
+
+        except Exception as e:
+            print("failed to delete game: ", e)
     
     # Deserialize dynamodb data types for more readable dictionaries
     def deserialize(self, data):
+        '''
+        Useful for deserializing when making calls with boto3.client. 
+        boto3.resource has built-in deserialization.
+        '''
         if data is None:
             return
 

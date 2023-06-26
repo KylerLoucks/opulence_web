@@ -1,8 +1,7 @@
 <template>
 
-<div class="parent-container">
-  <Games class='games' v-for="game in displayedDict" :id="game.PK" :users="game.users" :started="game.started" :key="game.PK" @joinRoom="joinRoom" ></Games>
-  <div>{{ page }}</div>
+<div v-if="games && games.length > 0" class="parent-container">
+  <Games class='games' v-for="game in displayedDict" :id="game.PK" :started="game.started" :key="game.PK" @joinRoom="joinRoom" ></Games>
   <Pagination
     v-model="page"
     :page-count="maxPages"
@@ -41,7 +40,6 @@ export default {
     return {
       page: 1,
       itemsPerPage: 2,
-      // nextToken: true
     }
   },
   computed: {
