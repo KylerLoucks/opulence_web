@@ -116,6 +116,7 @@ Resources:
           mv dist /usr/share/nginx/html
           mv nginx.conf /etc/nginx/conf.d
           systemctl start nginx
+          pip3 install requests==2.27.1
           
           # run a screen in detached mode as ec2-user (root user gets logged-out, which removes the screen session) and execute main.py
           runuser -l ec2-user -c 'screen -dmS "backend" python3.9 main.py'
@@ -203,6 +204,8 @@ Resources:
             DNSName: !GetAtt LoadBalancer.DNSName
   
   ACMCertificate:
+    DependsOn:
+      - "EC2Instance"
     Type: AWS::CertificateManager::Certificate
     Properties:
       DomainName: "*.playopulence.com" # wildcard *. allows the use of api.<domain-name>.com
@@ -216,8 +219,8 @@ Resources:
 
   dynamoDBTable:
     Type: AWS::DynamoDB::Table
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
+    # UpdateReplacePolicy: Retain
+    # DeletionPolicy: Retain
     Properties:
       TableName: opulence-data
       BillingMode: PROVISIONED
