@@ -51,6 +51,8 @@ Resources:
               Service: 
               - ec2.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore # Required for installing CodeDeploy agent on EC2 instances w/SSM
       Policies:
         - PolicyName: S3Access
           PolicyDocument:
@@ -65,32 +67,24 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:::${OpulenceS3Storage}"
                   - !Sub "arn:aws:s3:::${OpulenceS3Storage}/*"
-  # Required for installing CodeDeploy agent on EC2 instances w/SSM
-  SSMAgentRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-              - ec2.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: /
-      ManagedPolicyArns: 
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - PolicyName: GetCodeDeployAgent
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              Effect: Allow
+              Action:
+               - "s3:Get*"
+               - "s3:List*"
+              Resource:
+                - "arn:aws:s3:::codepipeline-us-east-1-415359081786/*"
+                - "arn:aws:s3:::aws-codedeploy-us-east-1/*"
   
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties: 
       Path: "/"
       Roles: 
-        - 
-          !Ref EC2Role
-        -
-          !Ref SSMAgentRole
+        - !Ref EC2Role
 
   EC2Instance:
     Type: AWS::EC2::Instance
