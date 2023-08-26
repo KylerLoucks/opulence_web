@@ -107,7 +107,8 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           aws s3 cp s3://${OpulenceS3Storage}/ /home/ec2-user --recursive
-          cd /home/ec2-user/src
+          cd /home/ec2-user/src 
+          rm -r /usr/share/nginx/html/dist
           # replace first occurance of ws://localhost:5000 with https websocket server
           sed -i 's,ws://localhost:5000,wss://playopulence.com,1' websocket.js
           cd /home/ec2-user
