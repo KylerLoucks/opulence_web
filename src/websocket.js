@@ -1,3 +1,4 @@
 const io = require('socket.io-client'); // socket io
-
-export const socket = io('ws://localhost:5000', {transports: ['websocket',]}) // Flask server address
+const websocket_backend = process.env.VUE_APP_WEBSOCKET_SERVER
+console.info(`App is running on: "${process.env.VUE_APP_ENVIRONMENT}" environment...`)
+export const socket = io(websocket_backend, {transports: ['websocket',]}) // Flask server address

@@ -109,15 +109,17 @@ Resources:
           aws s3 cp s3://${OpulenceS3Storage}/ /home/ec2-user --recursive
           cd /home/ec2-user/src 
           rm -r /usr/share/nginx/html/dist
-          # replace first occurance of ws://localhost:5000 with https websocket server
-          sed -i 's,ws://localhost:5000,wss://playopulence.com,1' websocket.js
           cd /home/ec2-user
           npm run build
           sed -i s/ADDRESS/_/1 nginx.conf
           mv dist /usr/share/nginx/html
           mv nginx.conf /etc/nginx/conf.d
           systemctl start nginx
-          pip3 install requests==2.27.1
+          pip3 install -r requirements.txt
+
+          yum -y install docker
+          systemctl start docker
+          docker run -d -p6379:6379 redis
           
           # run a screen in detached mode as ec2-user (root user gets logged-out, which removes the screen session) and execute main.py
           runuser -l ec2-user -c 'screen -dmS "backend" python3.9 main.py'

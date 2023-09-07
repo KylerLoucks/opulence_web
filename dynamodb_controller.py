@@ -5,9 +5,13 @@ import json
 import time
 from datetime import datetime
 import pprint
-
+import os
+from dotenv import load_dotenv
 # Unique ID with a sortable time prefix
 from ulid import ULID
+
+ENV = os.environ.get("PYTHON_ENV", "dev")
+load_dotenv(f'.env.python.{ENV}')
 
 class DynamoDBController:
     def __init__(self):

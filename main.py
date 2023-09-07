@@ -98,7 +98,14 @@ def on_client_disconnect():
         if gameID == 'None':
             return
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         log(f"Player is Disconnecting....: {name}")
         if opulence.remove_player(sid, name, disconnected=True):
             print(f"Player Disconnected: {name}")
@@ -128,7 +135,14 @@ def attack_card_selected(data):
     gameID = str(flask.session['gameID'])
     sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
     # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-    opulence = games_dict[gameID]
+    if games_dict.get(gameID):
+        opulence = games_dict[gameID]
+    else:
+        opulence = Opulence(
+            config=Config(),
+            game_id=gameID
+        )
+        opulence._load_game_state()
 
     # make sure the button only disapears if it's the turn of the player that clicks the attack button 
     if opulence._get_current_turn_sid() == sid:
@@ -146,7 +160,14 @@ def shop_button_pressed(data):
     sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
     gameID = str(flask.session['gameID'])
     # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-    opulence = games_dict[gameID]
+    if games_dict.get(gameID):
+        opulence = games_dict[gameID]
+    else:
+        opulence = Opulence(
+            config=Config(),
+            game_id=gameID
+        )
+        opulence._load_game_state()
 
     print(data)
     # if it's the players turn who's pushing the buttons
@@ -174,7 +195,14 @@ def take_rune(data):
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         rune = str(data)
         runes_taken = opulence.runes_taken
         print(f"player {sid} tried taking {rune}")
@@ -211,7 +239,14 @@ def play_card(data):
         card_idx = data.get('index', 0)
         gameID = str(flask.session['gameID'])
         # TODO replace opulence ref w/ Opulence(game_id=game_id) \ opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
 
         # record the number of living players
         alive_count = len(opulence._get_living_players())
@@ -259,7 +294,14 @@ def buy_card(data):
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         gameID = str(flask.session['gameID'])
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         card_idx = data['index']
         log(f"card at index: {card_idx} was attempted to be purchased")
         if opulence.buy_card(sid, card_idx):
@@ -294,7 +336,14 @@ def craft_card(data):
         element1 = data['element1']
         element2 = data['element2']
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         if opulence.buy_basic_card(sid, element1=element1, element2=element2):
             log('crafting the card was successful')
             emit('game-logs', opulence.game_logs.logs, room=gameID)
@@ -326,7 +375,14 @@ def buy_dragon(data):
         gameID = str(flask.session['gameID'])
         
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         dragon_idx = data['index']
         log(f"dragon at index: {dragon_idx} was attempted to be purchased")
         if opulence.buy_dragon(sid, dragon_idx):
@@ -409,7 +465,14 @@ def start_game():
         gameID = str(flask.session['gameID'])
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         
         if opulence.start_game(sid):
             games_list[gameID]['started'] = True
@@ -472,7 +535,14 @@ def on_leave():
         gameID = str(flask.session['gameID'])
         name = flask.session['displayName']
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
-        opulence = games_dict[gameID]
+        if games_dict.get(gameID):
+            opulence = games_dict[gameID]
+        else:
+            opulence = Opulence(
+                config=Config(),
+                game_id=gameID
+            )
+            opulence._load_game_state()
         log("user left the room " + name)
         if opulence.remove_player(sid, name):
             leave_room(gameID) 
