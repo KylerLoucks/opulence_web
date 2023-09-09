@@ -18,7 +18,7 @@ class DynamoDBController:
 
         self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
 
-        self.table = "testgamestate" # "testdatapksk"
+        self.table = os.environ['DDB_TABLE'] # "testdatapksk"
 
 # logs = []
 

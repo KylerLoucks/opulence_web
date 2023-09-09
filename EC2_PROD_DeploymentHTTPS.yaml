@@ -120,6 +120,8 @@ Resources:
           yum -y install docker
           systemctl start docker
           docker run -d -p6379:6379 redis
+
+          export PYTHON_ENV=prod
           
           # run a screen in detached mode as ec2-user (root user gets logged-out, which removes the screen session) and execute main.py
           runuser -l ec2-user -c 'screen -dmS "backend" python3.9 main.py'
