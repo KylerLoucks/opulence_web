@@ -129,6 +129,18 @@
     vertical-align: -0.2em;
     }
 
+    /* MOBILE */
+    @media screen and (max-width: 768px) {
+        .log-text {
+            text-align: left;
+            /* margin: 2px; */
+            color: white;
+            font-family: monospace;
+            font-size: min(3vw, 14px);
+        }
+    }
+
+
 
 
 </style>

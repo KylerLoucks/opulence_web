@@ -405,6 +405,7 @@
           </div>
           <div class="mobile-shop-exit-btn"></div>
           <div class="shop-container">
+            <h2 class="shop-title">Game Logs</h2>
             <ChatLog :logs="logs"></ChatLog>
           </div>
         </div>
@@ -580,9 +581,7 @@
             </div>
           </div>
         </div>
-        <div class="start-game-button-container">
-          <button v-if="!gameStarted" class="start-game-button" v-on:click="startGame()">Start Game</button>
-        </div>
+
       </div>
 
 
@@ -599,6 +598,10 @@
 
   
     <div v-if="utils.state.isMobile && ingame" class="shop-button-container">
+      <div class="start-game-button-container">
+        <button v-if="!gameStarted" class="start-game-button" v-on:click="startGame()">Start Game</button>
+      </div>
+      <template v-if="gameStarted">
         <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop">
           <fa icon="fa-solid fa-hammer" size="lg" class="button-icons"></fa>
         </button>
@@ -614,6 +617,7 @@
         <button class="shop-button" :disabled="!isTurn" v-on:click="showChat = true">
           <fa icon="fa-solid fa-comment-dots" size="lg" class="button-icons"></fa>
         </button>
+      </template>
     </div>
 
   
@@ -937,6 +941,7 @@
         this.buyingShopCards = false
         this.showHand = false
         this.crafting = false
+        this.showChat = false;
 
         this.socket.emit('shop-buttons-pressed', {'button': "dragon"})
       },
@@ -947,6 +952,7 @@
         this.buyingDragonCards = false
         this.showHand = false
         this.crafting = false
+        this.showChat = false;
         
         this.socket.emit('shop-buttons-pressed', {'button': "shop"})
       },
@@ -957,6 +963,8 @@
         this.showHand = false
         this.crafting = true
         
+        this.showChat = false;
+        
         this.socket.emit('shop-buttons-pressed', {'button': "craft"})
       },
 
@@ -966,6 +974,8 @@
         this.buyingDragonCards = false
         this.showHand = true
         this.crafting = false
+        
+        this.showChat = false;
         
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
@@ -1149,21 +1159,25 @@
           this.buyingDragonCards = false
           this.showHand = false
           this.crafting = false
+          this.showChat = false
         } else if (res == "dragon") {
           this.buyingDragonCards = true
           this.buyingShopCards = false
           this.showHand = false
           this.crafting = false
+          this.showChat = false
         } else if (res == "hand") {
+          this.showHand = true
           this.buyingShopCards = false
           this.buyingDragonCards = false
           this.crafting = false
-          this.showHand = true
+          this.showChat = false
         } else if (res == "craft") {
+          this.crafting = true
           this.buyingShopCards = false
           this.buyingDragonCards = false
           this.showHand = false
-          this.crafting = true
+          this.showChat = false
         }
       });
   
@@ -1835,8 +1849,7 @@
     }
     .start-game-button {
       width: 15em;
-      height: 5em;
-      margin-top: 15em;
+      height: 4em;
       
       /* background-color: #467d46;
       border: 2px solid #294129;
@@ -1971,7 +1984,7 @@
 
     .total-runes-text {
       margin-left: .15em;
-      font-size: clamp(1vh, 2vw, 2em);
+      font-size: clamp(1vh, 4vw, 2.5em);
     }
 
 
