@@ -174,7 +174,7 @@
         justify-content: center;
     }
     /* MOBILE */
-    @media screen and (max-width: 740px) {
+    @media screen and (max-width: 768px) {
     }
 
 </style>

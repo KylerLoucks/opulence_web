@@ -11,7 +11,10 @@ import boto3
 import ulid
 from enums import Rune
 import pprint
-
+import os
+from dotenv import load_dotenv
+ENV = os.environ.get("PYTHON_ENV", "dev")
+load_dotenv(f'.env.python.{ENV}')
 
 class Opulence:
     def __init__(self, config: Config, game_id: str=None):
@@ -35,7 +38,7 @@ class Opulence:
         self.boring_turn = False
 
         self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
-        self.table_name = "testgamestate"
+        self.table_name = os.environ['DDB_TABLE'] # "testdatapksk"
 
     def _save_player_state(self, player):
         """

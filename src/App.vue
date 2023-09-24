@@ -99,8 +99,8 @@
         </template>
     </div>
 
-
-    <div v-if="ingame" class="master-container">
+    <!-- DESKTOP -->
+    <div v-if="ingame && !utils.state.isMobile" class="master-container">
 
       <div class="shop-parent-container">
         <div v-show="buyingShopCards" class="shop-container">
@@ -142,10 +142,10 @@
   
   
         <div class="shop-button-container">
-          <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop">craft</button>
-          <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop">shop</button>
-          <button class="shop-button" :disabled="!isTurn" v-on:click="openDragonShop">dragon</button>
-          <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand">hand</button>
+          <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop">craft <fa icon="fa-solid fa-hammer" size="lg" class="button-icons"></fa></button>
+          <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop">shop <fa icon="fa-solid fa-coins" size="lg" class="button-icons"></fa></button>
+          <button class="shop-button" :disabled="!isTurn" v-on:click="openDragonShop">dragon <fa icon="fa-solid fa-dragon" size="lg" class="button-icons"></fa></button>
+          <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand">hand <fa icon="fa-solid fa-layer-group" size="lg" class="button-icons"></fa></button>
         </div>
       </div>
   
@@ -336,6 +336,286 @@
         </div>
       </div> -->
     </div>
+
+    <!-- MOBILE -->
+    <div v-if="ingame && utils.state.isMobile" class="master-container">
+      
+      
+      <transition name="mobile-card-shops" v-show="buyingShopCards" appear>
+        
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="mobile-shop-exit-btn"></div>
+          <div class="shop-container">
+              <h2 class="shop-title">Legendary Card Shop</h2>
+              <LegendaryShopCards class="shop-cards" v-for="(key, index) in current_game_card_shop" :cost="key.cost" :power="key.card.power" :affinity="key.card.affinity" :runeType="key.card.rune" :spellType="key.card.type" :currentTurnSid="this.currentTurnSid" :users="this.current_game_users" :key="index" @buyCard="buyCard(index)"></LegendaryShopCards>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="mobile-card-shops" v-show="buyingDragonCards" appear>
+        
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="shop-container">
+            <h2 class="shop-title">Dragon Shop</h2>
+            <DragonCards class="shop-cards" v-for="(key,index) in current_game_dragon_shop" :cost="key.cost" :dragonType="key.dragon.type" :currentTurnSid="this.currentTurnSid" :users="this.current_game_users" :key="index" @buyDragon="buyDragon(index)"></DragonCards>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="mobile-card-shops" v-show="showHand" appear>
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="mobile-shop-exit-btn"></div>
+          <div class="shop-container">
+            <template v-for="(user,userIndex) in current_game_users" :key="userIndex">
+              <template v-if="user.sid == this.currentTurnSid">
+                <h2 class="shop-title">{{user.display_name}}'s Hand</h2>
+                <PlayerCards class="shop-cards" v-for="(card, index) in current_game_users[userIndex].cards" :power="card.card.power" :affinity="card.card.affinity" :runeType="card.card.rune" :spellType="card.card.type" :key="index" @playCard="playCard(index, card.card.type)"></PlayerCards>
+              </template>
+            </template>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="mobile-card-shops" v-show="crafting" appear>
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="mobile-shop-exit-btn"></div>
+          <div class="shop-container">
+            <h2 class="shop-title">Craft a basic card</h2>
+            <Crafting class="shop-cards" :currentTurnSid="this.currentTurnSid" :users="this.current_game_users" @craftCard="craftCard"></Crafting>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="mobile-card-shops" v-show="showChat" appear>
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="mobile-shop-exit-btn"></div>
+          <div class="shop-container">
+            <ChatLog :logs="logs"></ChatLog>
+          </div>
+        </div>
+      </transition>
+    
+
+      <div class="player-statistics-container">
+        <div class="other-player-statistics">
+          <div class="other-player" v-for="(user, userIndex) in current_game_users" :key="userIndex">
+            <!-- render other player health/stats together -->
+            <div v-if="user.sid != this.sid">
+              <div class="hp-shield-bars">
+                <h3 class="player-name">Name: {{user.display_name}}</h3>
+                <div class="dragons-owned-container" >
+                  <div class="dragons-owned-icons" v-for="dragon in user.dragons" :key="dragon">
+                    <img draggable="false" :src="iconPath(`dragons/icons/${dragon.dragon.type}dragon-icon.png`)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <div class="dragons-owned-icons-runes">
+                      <img draggable="false" :src="iconPath(`${dragon.dragon.runes[0]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                      <img draggable="false" :src="iconPath(`${dragon.dragon.runes[1]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                    </div>
+                  </div>
+                </div>
+                <span v-show="user.vines > 0" class="status-effect-text" style="color:#5ec234">vines: {{user.vines}}</span>
+                <span v-show="user.burn > 0" class="status-effect-text" style="color:#dd221e">burn: {{user.burn}}</span>
+                <div class="hp-bar">
+                  <div class="hp-image">
+                
+                    <img v-show="attacking && !user.isDead" src="./assets/attack.png" style="width: 100%; min-width: 2em; max-width: 2em; height: 100%; max-height: 2em;" class="attack-button" v-on:click="attackPlayer(user.sid)"/>
+                    
+                    <img v-if="user.isDead" draggable="false" :src="iconPath(death_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;">
+                    <img v-else draggable="false" :src="iconPath(health_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"> 
+                  </div>
+                    <HpBar :bgcolor="'#880808'" :value="user.hp" :vines="user.vines"/>
+                </div>
+
+                <div class="shield-bar">
+                  <div class="shield-image">
+                    <img v-if="user.shield.rune == null" draggable="false" :src="iconPath(shield_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'FIRE'" draggable="false" :src="iconPath('fire-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'WATER'" draggable="false" :src="iconPath('water-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'DARK'" draggable="false" :src="iconPath('dark-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'ARCANE'" draggable="false" :src="iconPath('arcane-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'EARTH'" draggable="false" :src="iconPath('earth-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'NATURE'" draggable="false" :src="iconPath('nature-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'SOLAR'" draggable="false" :src="iconPath('solar-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="user.shield.rune == 'WIND'" draggable="false" :src="iconPath('wind-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  </div>
+                    <ShieldBar :bgcolor="shield_color" :value="user.shield.power" :shieldType="user.shield.rune"/>
+                </div>
+              </div>
+
+
+
+              
+              <img class="other-player-hand-button" draggable="false" :src="iconPath('logo.png')" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"  v-on:click="openPlayersHandModal(userIndex)"/>
+              
+              <div class="player-runes">
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/FIRE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"> <span style="color:#dd221e">{{user.runes.FIRE}}</span> (<span style="color:#f5c441">{{user.affinities.FIRE}}</span>)</h3>
+                  </div> 
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/WATER.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#3f7ab6">{{user.runes.WATER}}</span> (<span style="color:#f5c441">{{user.affinities.WATER}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/EARTH.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#865b38">{{user.runes.EARTH}}</span> (<span style="color:#f5c441">{{user.affinities.EARTH}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/ARCANE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#7332b7">{{user.runes.ARCANE}}</span> (<span style="color:#f5c441">{{user.affinities.ARCANE}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/NATURE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#5ec234">{{user.runes.NATURE}}</span> (<span style="color:#f5c441">{{user.affinities.NATURE}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/SOLAR.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#c9721f">{{user.runes.SOLAR}}</span> (<span style="color:#f5c441">{{user.affinities.SOLAR}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/DARK.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#200f34">{{user.runes.DARK}}</span> (<span style="color:#f5c441">{{user.affinities.DARK}}</span>)</h3>
+                  </div>
+                  <div class="rune-button">
+                    <img draggable="false" src="./assets/WIND.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
+                    <h3 class="total-runes-text"><span style="color:#b7b7b7">{{user.runes.WIND}}</span> (<span style="color:#f5c441">{{user.affinities.WIND}}</span>)</h3>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- render client health bars in another location -->
+      <div class="client-player-statistics">
+        <div class="client-player" v-for="(user, index) in current_game_users" :key="index">
+          <div v-if="user.sid == this.sid" class="client-player">
+
+            <div class="hp-shield-bars">
+              <h3 class="player-name">Name: {{user.display_name}}</h3>
+              <div class="dragons-owned-container" >
+                <div class="dragons-owned-icons" v-for="dragon in user.dragons" :key="dragon">
+                  <img draggable="false" :src="iconPath(`dragons/icons/${dragon.dragon.type}dragon-icon.png`)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <div class="dragons-owned-icons-runes">
+                    <img draggable="false" :src="iconPath(`${dragon.dragon.runes[0]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                    <img draggable="false" :src="iconPath(`${dragon.dragon.runes[1]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                  </div>
+                </div>
+              </div>
+              <span v-show="user.vines > 0" class="status-effect-text" style="color:#5ec234">vines: {{user.vines}}</span>
+              <span v-show="user.burn > 0" class="status-effect-text" style="color:#dd221e">burn: {{user.burn}}</span>
+              <div class="hp-bar">
+                <div class="hp-image">
+                  <img v-if="user.isDead" draggable="false" :src="iconPath(death_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;">
+                  <img v-else draggable="false" :src="iconPath(health_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"> 
+                </div>
+                    <HpBar :bgcolor="'#880808'" :value="user.hp" :vines="user.vines"/>
+              </div>
+              <div class="shield-bar">
+                <div class="shield-image">
+                  <img v-if="user.shield.rune == null" draggable="false" :src="iconPath(shield_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'FIRE'" draggable="false" :src="iconPath('fire-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'WATER'" draggable="false" :src="iconPath('water-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'DARK'" draggable="false" :src="iconPath('dark-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'ARCANE'" draggable="false" :src="iconPath('arcane-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'EARTH'" draggable="false" :src="iconPath('earth-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'NATURE'" draggable="false" :src="iconPath('nature-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'SOLAR'" draggable="false" :src="iconPath('solar-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  <img v-else-if="user.shield.rune == 'WIND'" draggable="false" :src="iconPath('wind-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                </div>
+                  <ShieldBar :bgcolor="shield_color" :value="user.shield.power" :shieldType="user.shield.rune"/>
+              </div>
+            </div>
+
+            <img class="other-player-hand-button" draggable="false" :src="iconPath('logo.png')" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"  v-on:click="openPlayersHandModal(index)"/>
+
+            <div class="player-runes">
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Fire damage lights the target on fire, dealing full damage on hit, then full damage again after the target's turn ends. Super effective against nature shield and poison vines."><img src="./assets/FIRE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('FIRE') : ''"/></span>
+                  <h3 class="total-runes-text"> <span style="color:#dd221e">{{user.runes.FIRE}}</span> (<span style="color:#f5c441">{{user.affinities.FIRE}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Water damage has no select target, but hits between 1-4 enemies for full damage. Super effective against fire shield."> <img src="./assets/WATER.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('WATER') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#3f7ab6">{{user.runes.WATER}}</span> (<span style="color:#f5c441">{{user.affinities.WATER}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Earth damage has a 25% chance to crit for triple damage. Super effective against wind shield."><img src="./assets/EARTH.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('EARTH') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#865b38">{{user.runes.EARTH}}</span> (<span style="color:#f5c441">{{user.affinities.EARTH}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Arcane damage ignores shields altogether, dealing full damage to healthbar."><img src="./assets/ARCANE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('ARCANE') : ''"/></span> 
+                  <h3 class="total-runes-text"><span style="color:#7332b7">{{user.runes.ARCANE}}</span> (<span style="color:#f5c441">{{user.affinities.ARCANE}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Nature always deals 1 damage, then traps the target in poison vines, which absorb damage from the target's attacks and deal 1 damage per turn until they're killed. Super effective against earth shield."><img src="./assets/NATURE.png" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('NATURE') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#5ec234">{{user.runes.NATURE}}</span> (<span style="color:#f5c441">{{user.affinities.NATURE}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Solar damage hits everyone in the game, including the user. Super effective against solar shield."><img src="./assets/SOLAR.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('SOLAR') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#c9721f">{{user.runes.SOLAR}}</span> (<span style="color:#f5c441">{{user.affinities.SOLAR}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Darkness damage heals the caster for all damage done to health (not shield). Super effective against darkness shield."><img src="./assets/DARK.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('DARK') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#200f34">{{user.runes.DARK}}</span> (<span style="color:#f5c441">{{user.affinities.DARK}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <span class="tooltip" data-hover="Wind damage is twice as effective against all shields. Super effective against water shield."><img src="./assets/WIND.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('WIND') : ''"/></span>
+                  <h3 class="total-runes-text"><span style="color:#b7b7b7">{{user.runes.WIND}}</span> (<span style="color:#f5c441">{{user.affinities.WIND}}</span>)</h3>
+                </div>
+            </div>
+          </div>
+        </div>
+        <div class="start-game-button-container">
+          <button v-if="!gameStarted" class="start-game-button" v-on:click="startGame()">Start Game</button>
+        </div>
+      </div>
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+  
+    <div v-if="utils.state.isMobile && ingame" class="shop-button-container">
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop">
+          <fa icon="fa-solid fa-hammer" size="lg" class="button-icons"></fa>
+        </button>
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop">
+          <fa icon="fa-solid fa-coins" size="lg" class="button-icons"></fa>
+        </button>
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openDragonShop">
+          <fa icon="fa-solid fa-dragon" size="lg" class="button-icons"></fa>
+        </button>
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand">
+          <fa icon="fa-solid fa-layer-group" size="lg" class="button-icons"></fa>
+        </button>
+        <button class="shop-button" :disabled="!isTurn" v-on:click="showChat = true">
+          <fa icon="fa-solid fa-comment-dots" size="lg" class="button-icons"></fa>
+        </button>
+    </div>
+
   
   
 
@@ -361,6 +641,7 @@
   import Authenticate from "./components/authenticate/Authenticate.vue"
   import PageLoader from "./components/PageLoader.vue";
   import GamesMenu from "./components/pagination/GamesMenu.vue";
+  import ChatLog from "./components/ChatLog.vue";
 
   import { userPool } from "./components/authenticate/UserPool"
 
@@ -368,6 +649,7 @@
 
   import AuthState from "./components/authenticate/AuthState"
 
+  import utils from "./utils";
   
   export default {
     name: 'App',
@@ -384,6 +666,7 @@
       Authenticate,
       PageLoader,
       GamesMenu,
+      ChatLog,
     },
     setup() {
       // const hp = ref(0);
@@ -400,8 +683,7 @@
         shield_icon: "shield.png",
         shield_color: "#dd221e",
 
-        
-        
+        utils,
         AuthState,
         socket,
         
@@ -422,7 +704,7 @@
         ":fire: runes"],
         
         
-        isTurn: false,
+        isTurn: true,
         
         connectedMsg: 'Disconnected',
         redisData: "",
@@ -437,7 +719,7 @@
         
 
       
-        current_game_card_shop: [{'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
+        current_game_card_shop: [{'card': {'rune': 'FIRE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'EARTH', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
         current_game_dragon_shop: [{'dragon': {'type': 'THORN', 'runes': ['NATURE', 'ARCANE']}, 'cost': {'NATURE': 20, 'ARCANE': 20}}],
         current_game_users: [{"sid":"WWxbPZRWHvr_L7lNAAAF","hp":10,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[{"dragon": {"type": "VOID", "runes": ["ARCANE", "DARK"]}}, {"dragon": {"type": "CLOUD", "runes": ["WIND", "WATER"]}}],"isDead":false, "vines": 0, "burn": 0, "display_name": "client-player"}, {"sid":"other_sid1","hp":5,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":2,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":7,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[],"isDead":true, "vines": 10, "burn": 1, "display_name": "other-player1"}, {"sid":"other_sid2","hp":10,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":2,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}, {"card": {"rune": "ARCANE", "type": "ATTACK", "affinity": 7, "power": 7}}, {"card": {"rune": "ARCANE", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":7,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[],"isDead":false, "vines": 0, "display_name": "other-player2"}],
         current_room_id: '0',
@@ -472,10 +754,22 @@
         configMaxPlayers: 8,
         configTurnTimer: 30,
         
+        showChat: false,
   
       }
     },
     methods: {
+
+      checkScreenSize() {
+          
+          // Update isMobile based on the current screen size
+          if (window.innerWidth <= 768) {
+            this.utils.setMobile(true)
+          } else {
+            this.utils.setMobile(false)
+          }
+          console.log(`Is Mobile?: ${this.utils.state.isMobile}`)
+      },
 
 
       pickRandomBackgroundOnDOMLoad() {
@@ -501,6 +795,14 @@
       openPlayersHandModal(index) {
         this.showHandModalIndex = index
         this.showHandModal = true
+      },
+
+      closeMobileShopModal() {
+        this.crafting = false;
+        this.buyingShopCards = false;
+        this.buyingDragonCards = false;
+        this.showHand = false;
+        this.showChat = false;
       },
       
 
@@ -608,6 +910,10 @@
           this.socket.emit('attack-card-selected', "true")
           this.cardIdxBeingPlayed = cardIdx
         }
+
+        if (this.utils.state.isMobile) {
+          this.showHand = false;
+        }
       },
   
       attackPlayer: function(sid) {
@@ -626,28 +932,41 @@
       },
   
       openDragonShop: function() {
-        // this.buyingDragonCards = true
-        // this.buyingShopCards = false
-        // this.showHand = false
+        // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.buyingDragonCards = true
+        this.buyingShopCards = false
+        this.showHand = false
+        this.crafting = false
+
         this.socket.emit('shop-buttons-pressed', {'button': "dragon"})
       },
   
       openCardShop: function() {
-        // this.buyingShopCards = true
-        // this.buyingDragonCards = false
-        // this.showHand = false
+        // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.buyingShopCards = true
+        this.buyingDragonCards = false
+        this.showHand = false
+        this.crafting = false
+        
         this.socket.emit('shop-buttons-pressed', {'button': "shop"})
       },
       openCraftShop: function() {
-        // this.buyingShopCards = true
-        // this.buyingDragonCards = false
-        // this.showHand = false
+        // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.buyingShopCards = false
+        this.buyingDragonCards = false
+        this.showHand = false
+        this.crafting = true
+        
         this.socket.emit('shop-buttons-pressed', {'button': "craft"})
       },
+
       openPlayersHand: function() {
-        // this.buyingShopCards = false
-        // this.buyingDragonCards = false
-        // this.showHand = true
+        // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.buyingShopCards = false
+        this.buyingDragonCards = false
+        this.showHand = true
+        this.crafting = false
+        
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
 
@@ -704,6 +1023,12 @@
 
     // before the DOM is mounted
     beforeMount: function() {
+
+      if (window.innerWidth <= 768) {
+        this.crafting = false;
+      } else {
+        this.crafting = true;
+      }
 
       // Grab cognito user from local storage
       var cognitoUser = userPool.getCurrentUser()
@@ -887,9 +1212,13 @@
   
     // do things on first load of the DOM
     mounted: function() {
+
       this.pickRandomBackgroundOnDOMLoad()
 
+      this.checkScreenSize();
 
+      // Add a window resize event listener to continuously monitor screen size changes
+      window.addEventListener("resize", this.checkScreenSize);
 
 
       // mobile touch events
@@ -921,6 +1250,7 @@
   <style>
   :root{
       --game-banner-height: 2.5em;
+      --game-footer-height: 4em;
   }
 
   body {
@@ -1359,6 +1689,7 @@
   .shop-title {
     font-size: clamp(1em, 1vw, 2em);
     word-break: break-all; /* wrap text to fit within the confines of parent*/
+    color: white;
   }
 
   .shop-container {
@@ -1477,13 +1808,13 @@
     }
   }
 
-  /* MOBILE */
-  @media screen and (max-width: 640px) {
+  .button-icons {
+    width: 1em;
+    height: 1em;
   }
 
-
-    /* MOBILE */
-  @media screen and (max-width: 740px) {
+  /* MOBILE */
+  @media screen and (max-width: 768px) {
     #mobile-hamburger{
       visibility: visible;
       position: absolute;
@@ -1493,24 +1824,53 @@
       z-index: 99;
     }
 
-    .shop-container {
-      width: 100%;
-      overflow-y:auto;
-      height: 75vh;
+    .mobile-chat-logs {
+      position: absolute
+
     }
 
-    .player-statistics-container{
-      width: 100%;
-      /* height: 85vh; */
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .button-icons {
+      width: 2em;
+      height: 2em;
     }
+    .start-game-button {
+      width: 15em;
+      height: 5em;
+      margin-top: 15em;
+      
+      /* background-color: #467d46;
+      border: 2px solid #294129;
+      border-radius: 6px;
+      color: white;
+      
+      text-align: center;
+      text-decoration: none; */
+      
+      font-size: clamp(.75em, 2vw, 2em);
+    }
+    
 
 
     .shop-button-container {
-      display: block;
+      position: absolute;
       justify-content: center;
+      max-height: var(--game-footer-height);
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      color: white;
+      background: linear-gradient(to right, #711282, rgb(12, 66, 132));
+      z-index: 999;
+      bottom: 0;
+
+    }
+
+    .shop-button {
+      margin: 1.5em;
+      background-color: #64572d00;
+      border: 2px solid #ffffff;
+      border-radius: 6px;
+      color: white;
     }
 
     .tooltip:before{
@@ -1523,12 +1883,119 @@
       justify-content: center;
       align-items: center;
     }
+
+    .master-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      padding-top: var(--game-banner-height);
+      padding-bottom: var(--game-footer-height);
+    }
+
+      /* client player stats */
+    .client-player-statistics {
+      width: 100%;
+      position: relative;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      overflow: auto;
+    }
+
+    .player-statistics-container{
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: calc(100% - 50px);
+      max-height: 40vh;
+    }
+
+    .other-player {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+   
+    }
+
+    .other-player-statistics {
+      overflow: auto;
+      background-color: rgba(44, 67, 77, 0.362);
+      border-style: solid;
+      box-sizing: border-box;
+      height: 100%;
+      width: 100%;
+    }
+
+
+    /* CSS for the animation transition */
+    .mobile-card-shops-enter-active,
+    .mobile-card-shops-leave-active {
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .mobile-card-shops-enter-from, .mobile-card-shops-leave-to /* .mobile-card-shop-leave-active in <2.1.8 */ {
+      transform: translateY(100%); /* Start offscreen at the bottom */
+    }
+
+    .mobile-card-shop {
+      position: fixed;
+      overflow: auto;
+      height: 100%;
+      width: 100%;
+      background-color: #222222; /* Lavender */
+
+      padding-bottom: 50px;
+      z-index: 999;
+    }
+
+    .shop-cards {
+      margin-top: 30px;
+    }
+
+    .mobile-shop-exit-btn {
+      position: absolute;
+      color: white;
+      margin: 1em;
+
+    }
+
+    .shop-container {
+      height: 100vh;
+      box-sizing: border-box;
+      padding-bottom: 150px;
+    }
+
+    .total-runes-text {
+      margin-left: .15em;
+      font-size: clamp(1vh, 2vw, 2em);
+    }
+
+
+    .game-config-modal {
+      max-width: 35em;
+      max-height: 35em;
+
+    }
+
+    .close-icon {
+      width: 1.5em;
+      height: 1.5em;
+      cursor: pointer;
+    }
+
+
   }
 
   /* DESKTOP */
   @media screen and (min-width: 1024px) {
     
   }
+
+
   
   </style>
   

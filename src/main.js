@@ -8,9 +8,13 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 /* import specific icons */
-import { faStopwatch } from '@fortawesome/free-solid-svg-icons'
+import { faStopwatch, faClose, faCoins,
+        faHammer, faCommentDots, faDragon,
+        faLayerGroup  } from '@fortawesome/free-solid-svg-icons'
 
 /* add icons to the library */
-library.add(faStopwatch)
+library.add(faStopwatch, faClose, faCoins,
+            faHammer, faCommentDots, faDragon,
+            faLayerGroup )
 
 createApp(App).component("fa", FontAwesomeIcon).mount('#app')

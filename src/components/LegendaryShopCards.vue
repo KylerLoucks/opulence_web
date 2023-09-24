@@ -65,6 +65,8 @@
   
   
 <script>
+    import utils from '@/utils';
+
     export default {
     name: "CardsInShop",
    
@@ -82,11 +84,23 @@
         };
     },
 
+    data: function() {
+        return {
+            utils
+        }
+    },
+
     methods: {
         updateCardBtnBackground: function() {
             var element = this.$refs.cardButton;
             element.style.backgroundRepeat = "no-repeat"
+
+
             element.style.backgroundSize = "100% 150px"
+
+            if (utils.state.isMobile) {
+                element.style.backgroundSize = "100% 250px"
+            }
 
             switch(this.runeType) {
                 case "ARCANE":
@@ -312,32 +326,6 @@
         height: 100%;
     }
 
-    /* MOBILE */
-    @media screen and (max-width: 740px) {
-        .card-button {
-            background-color: #2b3849;
-            border-radius: 1rem;
-            width: 100%;
-            height: 100%;
-        }
-
-        .cost-icons {
-            width:100%; 
-            max-width: 1em; 
-            max-height: 1em; 
-            height: 100%;
-        }
-        
-        .tooltip-cardshop:before{
-            content: none;
-        }
-
-
-    }
-
-
-
-
     /* COST GRID CONTAINER STYLING */
     .icon-text-container {
         display: flex;
@@ -358,6 +346,62 @@
         grid-template-columns: 1fr 1fr 1fr 1fr;
         padding: 5px;
         justify-items: center;
+    }
+
+    /* MOBILE */
+    @media screen and (max-width: 768px) {
+
+        .parent-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .idvalue {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: min(4vw, 15px);
+        
+        }
+        .card-button {
+            background-color: #2b3849;
+            border-radius: 1rem;
+            width: 100%;
+            height: 100%;
+            min-height: 15em;
+            max-width: 40em;
+        }
+
+        .cost-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            padding: 5px;
+            width: 25em;
+            justify-items: center;
+        }
+
+        .cost-icons {
+            width:100%; 
+            max-width: 2em; 
+            max-height: 2em; 
+            height: 100%;
+        }
+
+        .text {
+            padding-right: .2em;
+            color: white;
+            margin-top: .25rem;
+            width: 1.5em;
+            text-align: right;
+            font-size: min(10vw, 15px);
+        }
+        
+        .tooltip-cardshop:before{
+            content: none;
+        }
+
+
     }
 
 </style>

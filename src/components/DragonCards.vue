@@ -249,27 +249,6 @@
         height: 100%;
     }
 
-    /* MOBILE */
-    @media screen and (max-width: 740px) {
-        .card-button {
-            background-color: #2b3849;
-            border-radius: 1rem;
-            width: 100%;
-            height: 160px;
-        }
-
-        .cost-icons {
-            width:100%; 
-            max-width: 1em; 
-            max-height: 1em; 
-            height: 100%;
-        }
-        
-        .tooltip-cardshop:before{
-            content: none;
-        }
-    }
-    
     .cost-container {
         display: flex;
         flex-direction: row;
@@ -282,6 +261,60 @@
     
     
     }
+
+    /* MOBILE */
+    @media screen and (max-width: 768px) {
+
+        .parent-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .idvalue {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: min(4vw, 15px);
+        
+        }
+        .card-button {
+            background-color: #2b3849;
+            border-radius: 1rem;
+            width: 100%;
+            height: 100%;
+            min-height: 15em;
+            max-width: 40em;
+        }
+
+        .cost-icons {
+            width:100%; 
+            max-width: 1em; 
+            max-height: 1em; 
+            height: 100%;
+        }
+        
+        .tooltip-cardshop:before{
+            content: none;
+        }
+
+        .dragon-image {
+            border-radius: .75em;
+            width: 100%; 
+            height: 300px;
+            margin-top: .2em;
+        }
+
+        .cost-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            padding: 5px;
+            width: 25em;
+            justify-items: center;
+        }
+    }
+
+
 
 
 </style>

@@ -27,6 +27,8 @@
   
   
 <script>
+    import utils from '@/utils';
+
     export default {
     name: "CardsInHand",
    
@@ -47,6 +49,10 @@
             var element = this.$refs.playerCardButton;
             element.style.backgroundRepeat = "no-repeat"
             element.style.backgroundSize = "100% 150px"
+
+            if (utils.state.isMobile) {
+                element.style.backgroundSize = "100% 250px"
+            }
 
             switch(this.runeType) {
                 case "ARCANE":
@@ -182,9 +188,32 @@
         opacity: 70%;
     }
     /* MOBILE */
-    @media screen and (max-width: 740px) {
+    @media screen and (max-width: 768px) {
+
+        .parent-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .idvalue {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: min(4vw, 15px);
+        
+        }
         .tooltip-cardshop:before{
             content: none;
+        }
+
+        .card-button {
+            background-color: #2b3849;
+            border-radius: 1rem;
+            width: 100%;
+            height: 100%;
+            min-height: 15em;
+            max-width: 40em;
         }
     }
 
