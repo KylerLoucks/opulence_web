@@ -159,9 +159,10 @@
   
       <div class="player-statistics-container">
         <div class="other-player-statistics">
-          <div class="other-player" v-for="(user, userIndex) in current_game_users" :key="userIndex">
+          <template v-for="(user, userIndex) in current_game_users" :key="userIndex">
             <!-- render other player health/stats together -->
-            <div v-if="user.sid != this.sid">
+            <div v-if="user.sid != this.sid" class="divider"></div>
+            <div class="other-player" v-if="user.sid != this.sid">
               <div class="hp-shield-bars">
                 <h3 class="player-name">Name: {{user.display_name}}</h3>
                 <div class="dragons-owned-container" >
@@ -243,7 +244,7 @@
               </div>
             </div>
             
-        </div>
+        </template>
       </div>
   
       <!-- render client health bars in another location -->
@@ -422,9 +423,11 @@
 
       <div class="player-statistics-container">
         <div class="other-player-statistics">
-          <div class="other-player" v-for="(user, userIndex) in current_game_users" :key="userIndex">
+          <template v-for="(user, userIndex) in current_game_users" :key="userIndex">
             <!-- render other player health/stats together -->
-            <div v-if="user.sid != this.sid">
+            <div class="divider"  v-if="user.sid != this.sid"></div>
+            <div class="other-player" v-if="user.sid != this.sid" >
+              
               <div class="hp-shield-bars">
                 <h3 class="player-name">Name: {{user.display_name}}</h3>
                 <div class="dragons-owned-container" >
@@ -464,48 +467,8 @@
                     <ShieldBar :bgcolor="shield_color" :value="user.shield.power" :shieldType="user.shield.rune"/>
                 </div>
               </div>
-
-
-
-              
-              <img class="other-player-hand-button" draggable="false" :src="iconPath('logo.png')" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"  v-on:click="openPlayersHandModal(userIndex)"/>
-              
-              <div class="player-runes">
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/FIRE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"> <span style="color:#dd221e">{{user.runes.FIRE}}</span> (<span style="color:#f5c441">{{user.affinities.FIRE}}</span>)</h3>
-                  </div> 
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/WATER.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#3f7ab6">{{user.runes.WATER}}</span> (<span style="color:#f5c441">{{user.affinities.WATER}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/EARTH.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#865b38">{{user.runes.EARTH}}</span> (<span style="color:#f5c441">{{user.affinities.EARTH}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/ARCANE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#7332b7">{{user.runes.ARCANE}}</span> (<span style="color:#f5c441">{{user.affinities.ARCANE}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/NATURE.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#5ec234">{{user.runes.NATURE}}</span> (<span style="color:#f5c441">{{user.affinities.NATURE}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/SOLAR.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#c9721f">{{user.runes.SOLAR}}</span> (<span style="color:#f5c441">{{user.affinities.SOLAR}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/DARK.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#200f34">{{user.runes.DARK}}</span> (<span style="color:#f5c441">{{user.affinities.DARK}}</span>)</h3>
-                  </div>
-                  <div class="rune-button">
-                    <img draggable="false" src="./assets/WIND.png" style="width:100%; height: 100%; max-width: 1em; max-height: 1em;"/>
-                    <h3 class="total-runes-text"><span style="color:#b7b7b7">{{user.runes.WIND}}</span> (<span style="color:#f5c441">{{user.affinities.WIND}}</span>)</h3>
-                  </div>
-              </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
 
@@ -551,39 +514,39 @@
               </div>
             </div>
 
-            <img class="other-player-hand-button" draggable="false" :src="iconPath('logo.png')" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"  v-on:click="openPlayersHandModal(index)"/>
+            <!-- <img class="other-player-hand-button" draggable="false" :src="iconPath('logo.png')" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"  v-on:click="openPlayersHandModal(index)"/> -->
 
             <div class="player-runes">
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Fire damage lights the target on fire, dealing full damage on hit, then full damage again after the target's turn ends. Super effective against nature shield and poison vines."><img src="./assets/FIRE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('FIRE') : ''"/></span>
+                  <span class="tooltip" data-hover="Fire damage lights the target on fire, dealing full damage on hit, then full damage again after the target's turn ends. Super effective against nature shield and poison vines."><img src="./assets/FIRE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('FIRE') : ''"/></span>
                   <h3 class="total-runes-text"> <span style="color:#dd221e">{{user.runes.FIRE}}</span> (<span style="color:#f5c441">{{user.affinities.FIRE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Water damage has no select target, but hits between 1-4 enemies for full damage. Super effective against fire shield."> <img src="./assets/WATER.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('WATER') : ''"/></span>
+                  <span class="tooltip" data-hover="Water damage has no select target, but hits between 1-4 enemies for full damage. Super effective against fire shield."> <img src="./assets/WATER.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('WATER') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#3f7ab6">{{user.runes.WATER}}</span> (<span style="color:#f5c441">{{user.affinities.WATER}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Earth damage has a 25% chance to crit for triple damage. Super effective against wind shield."><img src="./assets/EARTH.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('EARTH') : ''"/></span>
+                  <span class="tooltip" data-hover="Earth damage has a 25% chance to crit for triple damage. Super effective against wind shield."><img src="./assets/EARTH.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('EARTH') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#865b38">{{user.runes.EARTH}}</span> (<span style="color:#f5c441">{{user.affinities.EARTH}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Arcane damage ignores shields altogether, dealing full damage to healthbar."><img src="./assets/ARCANE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('ARCANE') : ''"/></span> 
+                  <span class="tooltip" data-hover="Arcane damage ignores shields altogether, dealing full damage to healthbar."><img src="./assets/ARCANE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('ARCANE') : ''"/></span> 
                   <h3 class="total-runes-text"><span style="color:#7332b7">{{user.runes.ARCANE}}</span> (<span style="color:#f5c441">{{user.affinities.ARCANE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Nature always deals 1 damage, then traps the target in poison vines, which absorb damage from the target's attacks and deal 1 damage per turn until they're killed. Super effective against earth shield."><img src="./assets/NATURE.png" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('NATURE') : ''"/></span>
+                  <span class="tooltip" data-hover="Nature always deals 1 damage, then traps the target in poison vines, which absorb damage from the target's attacks and deal 1 damage per turn until they're killed. Super effective against earth shield."><img src="./assets/NATURE.png" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('NATURE') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#5ec234">{{user.runes.NATURE}}</span> (<span style="color:#f5c441">{{user.affinities.NATURE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Solar damage hits everyone in the game, including the user. Super effective against solar shield."><img src="./assets/SOLAR.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('SOLAR') : ''"/></span>
+                  <span class="tooltip" data-hover="Solar damage hits everyone in the game, including the user. Super effective against solar shield."><img src="./assets/SOLAR.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('SOLAR') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#c9721f">{{user.runes.SOLAR}}</span> (<span style="color:#f5c441">{{user.affinities.SOLAR}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Darkness damage heals the caster for all damage done to health (not shield). Super effective against darkness shield."><img src="./assets/DARK.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('DARK') : ''"/></span>
+                  <span class="tooltip" data-hover="Darkness damage heals the caster for all damage done to health (not shield). Super effective against darkness shield."><img src="./assets/DARK.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('DARK') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#200f34">{{user.runes.DARK}}</span> (<span style="color:#f5c441">{{user.affinities.DARK}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Wind damage is twice as effective against all shields. Super effective against water shield."><img src="./assets/WIND.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 2em; height: 100%; min-height: .5em; max-height: 2em;" v-on:click="isTurn ? takeRune('WIND') : ''"/></span>
+                  <span class="tooltip" data-hover="Wind damage is twice as effective against all shields. Super effective against water shield."><img src="./assets/WIND.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('WIND') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#b7b7b7">{{user.runes.WIND}}</span> (<span style="color:#f5c441">{{user.affinities.WIND}}</span>)</h3>
                 </div>
             </div>
@@ -733,7 +696,281 @@
       
         current_game_card_shop: [{'card': {'rune': 'FIRE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'ARCANE', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}, {'card': {'rune': 'EARTH', 'type': 'SHIELD', 'affinity': 8, 'power': 4}, 'cost': {'NATURE': 2, 'DARK': 8, 'ARCANE': 7, 'SOLAR': 5}}],
         current_game_dragon_shop: [{'dragon': {'type': 'THORN', 'runes': ['NATURE', 'ARCANE']}, 'cost': {'NATURE': 20, 'ARCANE': 20}}],
-        current_game_users: [{"sid":"WWxbPZRWHvr_L7lNAAAF","hp":10,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[{"dragon": {"type": "VOID", "runes": ["ARCANE", "DARK"]}}, {"dragon": {"type": "CLOUD", "runes": ["WIND", "WATER"]}}],"isDead":false, "vines": 0, "burn": 0, "display_name": "client-player"}, {"sid":"other_sid1","hp":5,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":2,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":7,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[],"isDead":true, "vines": 10, "burn": 1, "display_name": "other-player1"}, {"sid":"other_sid2","hp":10,"shield":{"rune":null,"power":0},"runes":{"ARCANE":0,"SOLAR":0,"DARK":0,"NATURE":2,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0}, "cards": [{"card": {"rune": "EARTH", "type": "ATTACK", "affinity": 7, "power": 7}}, {"card": {"rune": "ARCANE", "type": "ATTACK", "affinity": 7, "power": 7}}, {"card": {"rune": "ARCANE", "type": "ATTACK", "affinity": 7, "power": 7}}],"affinities":{"ARCANE":7,"SOLAR":0,"DARK":0,"NATURE":0,"EARTH":0,"WIND":0,"WATER":0,"FIRE":0},"dragons":[],"isDead":false, "vines": 0, "display_name": "other-player2"}],
+        current_game_users: [
+          {
+            "sid": "WWxbPZRWHvr_L7lNAAAF",
+            "hp": 10,
+            "shield": {
+              "rune": null,
+              "power": 0
+            },
+            "runes": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "cards": [
+              {
+                "card": {
+                  "rune": "EARTH",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              }
+            ],
+            "affinities": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "dragons": [
+              {
+                "dragon": {
+                  "type": "VOID",
+                  "runes": ["ARCANE", "DARK"]
+                }
+              },
+              {
+                "dragon": {
+                  "type": "CLOUD",
+                  "runes": ["WIND", "WATER"]
+                }
+              }
+            ],
+            "isDead": false,
+            "vines": 0,
+            "burn": 0,
+            "display_name": "client-player"
+          },
+          {
+            "sid": "other_sid1",
+            "hp": 5,
+            "shield": {
+              "rune": null,
+              "power": 0
+            },
+            "runes": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 2,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "cards": [
+              {
+                "card": {
+                  "rune": "EARTH",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              }
+            ],
+            "affinities": {
+              "ARCANE": 7,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "dragons": [],
+            "isDead": true,
+            "vines": 10,
+            "burn": 1,
+            "display_name": "other-player1"
+          },
+          {
+            "sid": "other_sid2",
+            "hp": 10,
+            "shield": {
+              "rune": null,
+              "power": 0
+            },
+            "runes": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 2,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "cards": [
+              {
+                "card": {
+                  "rune": "EARTH",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              }
+            ],
+            "affinities": {
+              "ARCANE": 7,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "dragons": [],
+            "isDead": false,
+            "vines": 0,
+            "display_name": "other-player2"
+          },
+          {
+            "sid": "other_sid3",
+            "hp": 10,
+            "shield": {
+              "rune": null,
+              "power": 0
+            },
+            "runes": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 2,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "cards": [
+              {
+                "card": {
+                  "rune": "EARTH",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              }
+            ],
+            "affinities": {
+              "ARCANE": 7,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "dragons": [],
+            "isDead": false,
+            "vines": 0,
+            "display_name": "other-player3"
+          },
+          {
+            "sid": "other_sid4",
+            "hp": 10,
+            "shield": {
+              "rune": null,
+              "power": 0
+            },
+            "runes": {
+              "ARCANE": 0,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 2,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "cards": [
+              {
+                "card": {
+                  "rune": "EARTH",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              },
+              {
+                "card": {
+                  "rune": "ARCANE",
+                  "type": "ATTACK",
+                  "affinity": 7,
+                  "power": 7
+                }
+              }
+            ],
+            "affinities": {
+              "ARCANE": 7,
+              "SOLAR": 0,
+              "DARK": 0,
+              "NATURE": 0,
+              "EARTH": 0,
+              "WIND": 0,
+              "WATER": 0,
+              "FIRE": 0
+            },
+            "dragons": [],
+            "isDead": false,
+            "vines": 0,
+            "display_name": "other-player4"
+          }
+        ],
         current_room_id: '0',
         ingame: false,
         tutorial: false,
@@ -1646,13 +1883,13 @@
     opacity: 70%;
   }
   
-  .other-player {
+  /* .other-player {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
    
-  }
+  } */
   
   /* client player stats */
   .client-player-statistics {
@@ -1857,7 +2094,11 @@
   }
 
 
-
+  .divider {
+    width: 100%;
+    height: 1px; /* Set a height for the divider line */
+    background-color: #ccc; /* Customize the divider line color */
+  }
 
 
   /* MOBILE */
@@ -1993,18 +2234,20 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center;
-   
-    }
+      align-items: flex-start;
+      margin-bottom: 2em;
+  }
 
-    .other-player-statistics {
-      overflow: auto;
-      background-color: rgba(44, 67, 77, 0.362);
-      border-style: solid;
-      box-sizing: border-box;
-      height: 100%;
-      width: 100%;
-    }
+  .other-player-statistics {
+    overflow: auto;
+    height: 100%;
+    min-height: 200px;
+    background-color: rgba(44, 67, 77, 0.362);
+    border-style: solid;
+    box-sizing: border-box;
+
+    width: 100%;
+  }
 
 
     /* CSS for the animation transition */
@@ -2062,6 +2305,8 @@
       height: 1.5em;
       cursor: pointer;
     }
+
+
 
 
   }

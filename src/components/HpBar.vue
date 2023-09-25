@@ -72,7 +72,7 @@
 <style scoped>
     .container {
     height: 15px;
-    max-height: 1.2vw;
+    max-height: 5.2vw;
     width: 100%;
     max-width: 16em;
     background-color: #e0e0de34;
