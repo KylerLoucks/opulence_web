@@ -369,8 +369,8 @@
             border-radius: 1rem;
             width: 100%;
             height: 100%;
-            min-height: 15em;
-            max-width: 40em;
+            min-height: 10em;
+            max-width: 25em;
         }
 
         .cost-container {

@@ -2,7 +2,15 @@
   <div id="app">
     <PageLoader></PageLoader>
 
-    <span id="mobile-hamburger" class="material-icons">menu</span>
+
+    <transition name="settings" v-show="showSettings" appear>
+        <div class="settings">
+          <fa v-if="showSettings" icon="fa-solid fa-close" size="lg" class="settings-close-btn" v-on:click="showSettings = false" />
+        </div>
+    </Transition>
+    <span v-if="!showSettings" id="mobile-hamburger" class="material-icons" v-on:click="showSettings = true">menu</span>
+
+
 
     <div v-if="!ingame && !tutorial" class="opulence-banner-container">
       <img src="./assets/OPULENCE.png" class="opulence-banner" draggable="false"/>
@@ -614,7 +622,7 @@
         <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand">
           <fa icon="fa-solid fa-layer-group" size="lg" class="button-icons"></fa>
         </button>
-        <button class="shop-button" :disabled="!isTurn" v-on:click="showChat = true">
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openChatLogs()">
           <fa icon="fa-solid fa-comment-dots" size="lg" class="button-icons"></fa>
         </button>
       </template>
@@ -759,6 +767,7 @@
         configTurnTimer: 30,
         
         showChat: false,
+        showSettings: false,
   
       }
     },
@@ -773,6 +782,15 @@
             this.utils.setMobile(false)
           }
           console.log(`Is Mobile?: ${this.utils.state.isMobile}`)
+      },
+
+      viewSettings() {
+        if (this.showSettings == true) {
+          this.showSettings = false
+        } else {
+          this.showSettings = true
+        }
+        
       },
 
 
@@ -970,13 +988,24 @@
 
       openPlayersHand: function() {
         // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.showHand = true
         this.buyingShopCards = false
         this.buyingDragonCards = false
-        this.showHand = true
         this.crafting = false
-        
         this.showChat = false;
         
+        this.socket.emit('shop-buttons-pressed', {'button': "hand"})
+      },
+
+
+      openChatLogs: function() {
+        // TODO: REMOVE THESE. FOR TESTING ONLY. USE WEBSOCKET SERVER.
+        this.showChat = true;
+        this.buyingShopCards = false
+        this.buyingDragonCards = false
+        this.showHand = false
+        this.crafting = false
+
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
 
@@ -1389,7 +1418,7 @@
     height: 100%;
     color: white;
     background: linear-gradient(to right, #711282, rgb(12, 66, 132));
-    z-index: 1;
+    /* z-index: 1; */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1795,7 +1824,7 @@
   #mobile-hamburger {
     visibility: hidden;
     position: absolute;
-    
+    z-index: 1;
   }
 
   
@@ -1827,6 +1856,10 @@
     height: 1em;
   }
 
+
+
+
+
   /* MOBILE */
   @media screen and (max-width: 768px) {
     #mobile-hamburger{
@@ -1837,6 +1870,36 @@
       color:rgb(255, 255, 255);
       z-index: 99;
     }
+
+    /* CSS for the animation transition */
+    .settings-enter-active,
+    .settings-leave-active {
+      transition: transform 0.4s ease-in-out;
+    }
+
+    .settings-enter-from, .settings-leave-to {
+      transform: translateX(-100%); /* Start offscreen at the bottom */
+    }
+
+    .settings {
+      position: absolute;
+      background-color: #222222;
+      width: 18em;
+      height: 100vh;
+      z-index: 999;
+    }
+    
+    .settings-close-btn {
+      position: absolute;
+      color: white;
+      width: 1.5em;
+      height: 1.5em;
+      top: 0;
+      right: 0;
+      padding: 25px;
+      padding-top: 15px;
+    }
+
 
     .mobile-chat-logs {
       position: absolute
@@ -1873,7 +1936,7 @@
       height: 100%;
       color: white;
       background: linear-gradient(to right, #711282, rgb(12, 66, 132));
-      z-index: 999;
+      z-index: 997;
       bottom: 0;
 
     }
@@ -1881,7 +1944,7 @@
     .shop-button {
       margin: 1.5em;
       background-color: #64572d00;
-      border: 2px solid #ffffff;
+      border: 1px solid #ffffff;
       border-radius: 6px;
       color: white;
     }
@@ -1907,7 +1970,7 @@
       padding-bottom: var(--game-footer-height);
     }
 
-      /* client player stats */
+    /* client player stats */
     .client-player-statistics {
       width: 100%;
       position: relative;
@@ -1962,7 +2025,7 @@
       background-color: #222222; /* Lavender */
 
       padding-bottom: 50px;
-      z-index: 999;
+      z-index: 2;
     }
 
     .shop-cards {
