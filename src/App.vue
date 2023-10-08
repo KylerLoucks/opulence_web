@@ -359,6 +359,9 @@
           <div class="mobile-shop-exit-btn"></div>
           <div class="shop-container">
               <h2 class="shop-title">Legendary Card Shop</h2>
+              <button class="shop-button" :disabled="!isTurn" v-on:click="openDragonShop">
+                <fa icon="fa-solid fa-dragon" size="lg" class="button-icons"></fa>
+              </button>
               <LegendaryShopCards class="shop-cards" v-for="(key, index) in current_game_card_shop" :cost="key.cost" :power="key.card.power" :affinity="key.card.affinity" :runeType="key.card.rune" :spellType="key.card.type" :currentTurnSid="this.currentTurnSid" :users="this.current_game_users" :key="index" @buyCard="buyCard(index)"></LegendaryShopCards>
           </div>
         </div>
@@ -372,6 +375,10 @@
           </div>
           <div class="shop-container">
             <h2 class="shop-title">Dragon Shop</h2>
+            <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop()">
+              <fa icon="fa-solid fa-undo" size="lg" class="button-icons"></fa>
+              <fa icon="fa-solid fa-coins" size="lg" class="button-icons"></fa>
+            </button>
             <DragonCards class="shop-cards" v-for="(key,index) in current_game_dragon_shop" :cost="key.cost" :dragonType="key.dragon.type" :currentTurnSid="this.currentTurnSid" :users="this.current_game_users" :key="index" @buyDragon="buyDragon(index)"></DragonCards>
           </div>
         </div>
@@ -419,14 +426,109 @@
           </div>
         </div>
       </transition>
+
+      <!-- PLAYER STATS -->
+      <transition name="mobile-card-shops" v-show="showHandModal" appear>
+        <div class="mobile-card-shop">
+          <div class="mobile-shop-exit-btn">
+            <fa icon="fa-solid fa-close" size="lg" class="close-icon" v-on:click="closeMobileShopModal()" />
+          </div>
+          <div class="shop-container">
+            <div v-if="current_game_users[showHandModalIndex] != null">
+              <h2 v-if="current_game_users[showHandModalIndex].sid != this.sid" style="font-size: clamp(1em, 1vw, 2em);">{{current_game_users[showHandModalIndex].display_name}}'s Stats</h2>
+              <h2 v-else style="font-size: clamp(1em, 1vw, 2em);">Your Stats</h2>
+
+
+              <div class="hp-shield-bars">
+                <div class="dragons-owned-container" >
+                  <div class="dragons-owned-icons" v-for="dragon in current_game_users[showHandModalIndex].dragons" :key="dragon">
+                    <img draggable="false" :src="iconPath(`dragons/icons/${dragon.dragon.type}dragon-icon.png`)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <div class="dragons-owned-icons-runes">
+                      <img draggable="false" :src="iconPath(`${dragon.dragon.runes[0]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                      <img draggable="false" :src="iconPath(`${dragon.dragon.runes[1]}.png`)" style="width: 100%; max-width: 1em; height: 100%; max-height: 1em;"/>
+                    </div>
+                  </div>
+                </div>
+                <span v-show="current_game_users[showHandModalIndex].vines > 0" class="status-effect-text" style="color:#5ec234">vines: {{current_game_users[showHandModalIndex].vines}}</span>
+                <span v-show="current_game_users[showHandModalIndex].burn > 0" class="status-effect-text" style="color:#dd221e">burn: {{current_game_users[showHandModalIndex].burn}}</span>
+                <div class="hp-bar">
+                  <div class="hp-image">
+                
+                    <img v-show="attacking && !current_game_users[showHandModalIndex].isDead" src="./assets/attack.png" style="width: 100%; min-width: 2em; max-width: 2em; height: 100%; max-height: 2em;" class="attack-button" v-on:click="attackPlayer(user.sid)"/>
+                    
+                    <img v-if="current_game_users[showHandModalIndex].isDead" draggable="false" :src="iconPath(death_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;">
+                    <img v-else draggable="false" :src="iconPath(health_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"> 
+                  </div>
+                    <HpBar :bgcolor="'#880808'" :value="current_game_users[showHandModalIndex].hp" :vines="current_game_users[showHandModalIndex].vines"/>
+                </div>
+
+                <div class="shield-bar">
+                  <div class="shield-image">
+                    <img v-if="current_game_users[showHandModalIndex].shield.rune == null" draggable="false" :src="iconPath(shield_icon)" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'FIRE'" draggable="false" :src="iconPath('fire-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'WATER'" draggable="false" :src="iconPath('water-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'DARK'" draggable="false" :src="iconPath('dark-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'ARCANE'" draggable="false" :src="iconPath('arcane-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'EARTH'" draggable="false" :src="iconPath('earth-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'NATURE'" draggable="false" :src="iconPath('nature-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'SOLAR'" draggable="false" :src="iconPath('solar-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                    <img v-else-if="current_game_users[showHandModalIndex].shield.rune == 'WIND'" draggable="false" :src="iconPath('wind-shield.png')" style="width: 100%; max-width: 2em; height: 100%; max-height: 2em;"/>
+                  </div>
+                    <ShieldBar :bgcolor="shield_color" :value="current_game_users[showHandModalIndex].shield.power" :shieldType="current_game_users[showHandModalIndex].shield.rune"/>
+                </div>
+              </div>
+              
+              <div class="player-runes">
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/FIRE.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"> <span style="color:#dd221e">{{current_game_users[showHandModalIndex].runes.FIRE}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.FIRE}}</span>)</h3>
+                </div> 
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/WATER.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#3f7ab6">{{current_game_users[showHandModalIndex].runes.WATER}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.WATER}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/EARTH.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#865b38">{{current_game_users[showHandModalIndex].runes.EARTH}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.EARTH}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/ARCANE.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#7332b7">{{current_game_users[showHandModalIndex].runes.ARCANE}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.ARCANE}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/NATURE.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#5ec234">{{current_game_users[showHandModalIndex].runes.NATURE}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.NATURE}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/SOLAR.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#c9721f">{{current_game_users[showHandModalIndex].runes.SOLAR}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.SOLAR}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/DARK.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#200f34">{{current_game_users[showHandModalIndex].runes.DARK}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.DARK}}</span>)</h3>
+                </div>
+                <div class="rune-button">
+                  <img draggable="false" src="./assets/WIND.png" style="width:100%; height: 100%; max-width: 2em; max-height: 2em;"/>
+                  <h3 class="total-runes-text"><span style="color:#b7b7b7">{{current_game_users[showHandModalIndex].runes.WIND}}</span> (<span style="color:#f5c441">{{current_game_users[showHandModalIndex].affinities.WIND}}</span>)</h3>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="player-hand-modal-cards">
+                <h2>Hand</h2>
+                <ClientSidePlayerCards class="shop-cards" v-for="(card) in current_game_users[showHandModalIndex].cards" :power="card.card.power" :affinity="card.card.affinity" :runeType="card.card.rune" :spellType="card.card.type" :key="card"></ClientSidePlayerCards>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
     
 
       <div class="player-statistics-container">
         <div class="other-player-statistics">
           <template v-for="(user, userIndex) in current_game_users" :key="userIndex">
             <!-- render other player health/stats together -->
-            <div class="divider"  v-if="user.sid != this.sid"></div>
-            <div class="other-player" v-if="user.sid != this.sid" >
+            <div class="divider" v-if="user.sid != this.sid"></div>
+            <div class="other-player" v-if="user.sid != this.sid" v-on:click="openPlayersHandModal(userIndex)" >
               
               <div class="hp-shield-bars">
                 <h3 class="player-name">Name: {{user.display_name}}</h3>
@@ -518,35 +620,35 @@
 
             <div class="player-runes">
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Fire damage lights the target on fire, dealing full damage on hit, then full damage again after the target's turn ends. Super effective against nature shield and poison vines."><img src="./assets/FIRE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('FIRE') : ''"/></span>
+                  <span class="tooltip" data-hover="Fire damage lights the target on fire, dealing full damage on hit, then full damage again after the target's turn ends. Super effective against nature shield and poison vines."><img src="./assets/FIRE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('FIRE') : ''"/></span>
                   <h3 class="total-runes-text"> <span style="color:#dd221e">{{user.runes.FIRE}}</span> (<span style="color:#f5c441">{{user.affinities.FIRE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Water damage has no select target, but hits between 1-4 enemies for full damage. Super effective against fire shield."> <img src="./assets/WATER.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('WATER') : ''"/></span>
+                  <span class="tooltip" data-hover="Water damage has no select target, but hits between 1-4 enemies for full damage. Super effective against fire shield."> <img src="./assets/WATER.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('WATER') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#3f7ab6">{{user.runes.WATER}}</span> (<span style="color:#f5c441">{{user.affinities.WATER}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Earth damage has a 25% chance to crit for triple damage. Super effective against wind shield."><img src="./assets/EARTH.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('EARTH') : ''"/></span>
+                  <span class="tooltip" data-hover="Earth damage has a 25% chance to crit for triple damage. Super effective against wind shield."><img src="./assets/EARTH.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('EARTH') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#865b38">{{user.runes.EARTH}}</span> (<span style="color:#f5c441">{{user.affinities.EARTH}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Arcane damage ignores shields altogether, dealing full damage to healthbar."><img src="./assets/ARCANE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('ARCANE') : ''"/></span> 
+                  <span class="tooltip" data-hover="Arcane damage ignores shields altogether, dealing full damage to healthbar."><img src="./assets/ARCANE.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('ARCANE') : ''"/></span> 
                   <h3 class="total-runes-text"><span style="color:#7332b7">{{user.runes.ARCANE}}</span> (<span style="color:#f5c441">{{user.affinities.ARCANE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Nature always deals 1 damage, then traps the target in poison vines, which absorb damage from the target's attacks and deal 1 damage per turn until they're killed. Super effective against earth shield."><img src="./assets/NATURE.png" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('NATURE') : ''"/></span>
+                  <span class="tooltip" data-hover="Nature always deals 1 damage, then traps the target in poison vines, which absorb damage from the target's attacks and deal 1 damage per turn until they're killed. Super effective against earth shield."><img src="./assets/NATURE.png" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('NATURE') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#5ec234">{{user.runes.NATURE}}</span> (<span style="color:#f5c441">{{user.affinities.NATURE}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Solar damage hits everyone in the game, including the user. Super effective against solar shield."><img src="./assets/SOLAR.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('SOLAR') : ''"/></span>
+                  <span class="tooltip" data-hover="Solar damage hits everyone in the game, including the user. Super effective against solar shield."><img src="./assets/SOLAR.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('SOLAR') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#c9721f">{{user.runes.SOLAR}}</span> (<span style="color:#f5c441">{{user.affinities.SOLAR}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Darkness damage heals the caster for all damage done to health (not shield). Super effective against darkness shield."><img src="./assets/DARK.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('DARK') : ''"/></span>
+                  <span class="tooltip" data-hover="Darkness damage heals the caster for all damage done to health (not shield). Super effective against darkness shield."><img src="./assets/DARK.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('DARK') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#200f34">{{user.runes.DARK}}</span> (<span style="color:#f5c441">{{user.affinities.DARK}}</span>)</h3>
                 </div>
                 <div class="rune-button">
-                  <span class="tooltip" data-hover="Wind damage is twice as effective against all shields. Super effective against water shield."><img src="./assets/WIND.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 4em; height: 100%; min-height: .5em; max-height: 4em;" v-on:click="isTurn ? takeRune('WIND') : ''"/></span>
+                  <span class="tooltip" data-hover="Wind damage is twice as effective against all shields. Super effective against water shield."><img src="./assets/WIND.png" draggable="false" :class="isTurn ? 'rune-btn-img' : 'rune-btn-img-notturn'" style="width: 100%; min-width: .5em; max-width: 3em; height: 100%; min-height: .5em; max-height: 3em;" v-on:click="isTurn ? takeRune('WIND') : ''"/></span>
                   <h3 class="total-runes-text"><span style="color:#b7b7b7">{{user.runes.WIND}}</span> (<span style="color:#f5c441">{{user.affinities.WIND}}</span>)</h3>
                 </div>
             </div>
@@ -573,16 +675,13 @@
         <button v-if="!gameStarted" class="start-game-button" v-on:click="startGame()">Start Game</button>
       </div>
       <template v-if="gameStarted">
-        <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop">
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openCraftShop()">
           <fa icon="fa-solid fa-hammer" size="lg" class="button-icons"></fa>
         </button>
-        <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop">
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openCardShop()">
           <fa icon="fa-solid fa-coins" size="lg" class="button-icons"></fa>
         </button>
-        <button class="shop-button" :disabled="!isTurn" v-on:click="openDragonShop">
-          <fa icon="fa-solid fa-dragon" size="lg" class="button-icons"></fa>
-        </button>
-        <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand">
+        <button class="shop-button" :disabled="!isTurn" v-on:click="openPlayersHand()">
           <fa icon="fa-solid fa-layer-group" size="lg" class="button-icons"></fa>
         </button>
         <button class="shop-button" :disabled="!isTurn" v-on:click="openChatLogs()">
@@ -706,9 +805,9 @@
             },
             "runes": {
               "ARCANE": 0,
-              "SOLAR": 0,
+              "SOLAR": 2,
               "DARK": 0,
-              "NATURE": 0,
+              "NATURE": 2,
               "EARTH": 0,
               "WIND": 0,
               "WATER": 0,
@@ -1062,6 +1161,7 @@
         this.buyingDragonCards = false;
         this.showHand = false;
         this.showChat = false;
+        this.showHandModal = false;
       },
       
 
@@ -2169,7 +2269,6 @@
 
 
     .shop-button-container {
-      position: absolute;
       justify-content: center;
       max-height: var(--game-footer-height);
       position: absolute;

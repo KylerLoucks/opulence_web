@@ -1,24 +1,26 @@
 <template>
 
-    <div ref="playerCardButton" class="card-button"> 
+    <div class="parent-container">
+        <div ref="playerCardButton" class="card-button"> 
 
-        <div class="damage-type-image-stats">
-            <span class="tooltip-cardshop" data-hover="Attack Card" v-if="spellType == 'ATTACK'"><img draggable="false" src="@/assets/sword.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span>
-            <span class="tooltip-cardshop" data-hover="Defence Card" v-else-if="spellType == 'SHIELD'" ><img draggable="false" src="@/assets/shield.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span> 
-            <span class="tooltip-cardshop" data-hover="Mundane" v-else> <img draggable="false" src="@/assets/mundane.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span>
-            <h3 class="damage-value">{{power}}</h3>
-        </div>
+            <div class="damage-type-image-stats">
+                <span class="tooltip-cardshop" data-hover="Attack Card" v-if="spellType == 'ATTACK'"><img draggable="false" src="@/assets/sword.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span>
+                <span class="tooltip-cardshop" data-hover="Defence Card" v-else-if="spellType == 'SHIELD'" ><img draggable="false" src="@/assets/shield.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span> 
+                <span class="tooltip-cardshop" data-hover="Mundane" v-else> <img draggable="false" src="@/assets/mundane.png" style="width:100%; max-width: 32px; max-height: 32px; height: 100%;"/></span>
+                <h3 class="damage-value">{{power}}</h3>
+            </div>
 
-        <div class="affinity-stats">
-            <span v-if="runeType == 'WIND'" class="tooltip-cardshop" data-hover="Wind Afinity" ><img draggable="false" src="@/assets/WIND.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'FIRE'" class="tooltip-cardshop" data-hover="Fire Affinity" ><img draggable="false" src="@/assets/FIRE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;" /></span>
-            <span v-else-if="runeType == 'WATER'" class="tooltip-cardshop" data-hover="Water Affinity" ><img draggable="false" src="@/assets/WATER.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'SOLAR'" class="tooltip-cardshop" data-hover="Solar Affinity" ><img draggable="false" src="@/assets/SOLAR.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'DARK'" class="tooltip-cardshop" data-hover="Dark Affinity" ><img draggable="false" src="@/assets/DARK.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'ARCANE'" class="tooltip-cardshop" data-hover="Arcane Affinity" ><img draggable="false" src="@/assets/ARCANE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'EARTH'" class="tooltip-cardshop" data-hover="Earth Affinity"  ><img draggable="false" src="@/assets/EARTH.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <span v-else-if="runeType == 'NATURE'" class="tooltip-cardshop" data-hover="Nature Affinity" ><img draggable="false" src="@/assets/NATURE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
-            <h3 class="affinity-value">{{affinity}}</h3>
+            <div class="affinity-stats">
+                <span v-if="runeType == 'WIND'" class="tooltip-cardshop" data-hover="Wind Afinity" ><img draggable="false" src="@/assets/WIND.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'FIRE'" class="tooltip-cardshop" data-hover="Fire Affinity" ><img draggable="false" src="@/assets/FIRE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;" /></span>
+                <span v-else-if="runeType == 'WATER'" class="tooltip-cardshop" data-hover="Water Affinity" ><img draggable="false" src="@/assets/WATER.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'SOLAR'" class="tooltip-cardshop" data-hover="Solar Affinity" ><img draggable="false" src="@/assets/SOLAR.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'DARK'" class="tooltip-cardshop" data-hover="Dark Affinity" ><img draggable="false" src="@/assets/DARK.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'ARCANE'" class="tooltip-cardshop" data-hover="Arcane Affinity" ><img draggable="false" src="@/assets/ARCANE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'EARTH'" class="tooltip-cardshop" data-hover="Earth Affinity"  ><img draggable="false" src="@/assets/EARTH.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <span v-else-if="runeType == 'NATURE'" class="tooltip-cardshop" data-hover="Nature Affinity" ><img draggable="false" src="@/assets/NATURE.png" style="width:100%; max-width: 2em; max-height: 2em; height: 100%;"/></span>
+                <h3 class="affinity-value">{{affinity}}</h3>
+            </div>
         </div>
     </div>
 
@@ -26,6 +28,9 @@
   
   
 <script>
+    // This component renders the cards when you are looking at other players hand
+    import utils from '@/utils';
+
     export default {
     name: "CardsInHand",
    
@@ -41,12 +46,23 @@
         };
     },
 
+    data: function() {
+        return {
+            utils
+        }
+    },
+
     methods: {
         updateCardBtnBackground: function() {
             var element = this.$refs.playerCardButton;
             element.style.backgroundRepeat = "no-repeat"
             element.style.backgroundSize = "100% 160px"
             element.style.backgroundAttachment = "fixed"
+
+            if (utils.state.isMobile) {
+                element.style.backgroundSize = "100% 150px"
+                element.style.backgroundAttachment = ""
+            }
 
             switch(this.runeType) {
                 case "ARCANE":
@@ -175,6 +191,26 @@
     }
     /* MOBILE */
     @media screen and (max-width: 768px) {
+
+        .parent-container {
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-button {
+            height: 100%;
+            width: 100%;
+            max-width: 50vw;
+            min-height: 5em;
+            background-color: #2b3849;
+            border-radius: 1rem;
+            box-shadow: 0px 5px 20px #000000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            justify-content: center;
+        }
     }
 
 </style>

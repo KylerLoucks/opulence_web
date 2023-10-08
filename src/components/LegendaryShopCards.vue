@@ -371,6 +371,7 @@
             height: 100%;
             min-height: 10em;
             max-width: 25em;
+            box-shadow: 0px 5px 20px #000000;
         }
 
         .cost-container {

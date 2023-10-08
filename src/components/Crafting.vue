@@ -256,5 +256,22 @@
     
     }
 
+    /* MOBILE */
+    @media screen and (max-width: 768px) {
+        .selected-rune1, .selected-rune2 {
+            height: 6vmax;
+            width:  6vmax;
+            background-color: rgb(47, 47, 47);
+            border-radius: 6px;
+            border: .2rem solid #d9d9d9;
+            margin: .3rem;
+        }
+
+        .craft-button, .reset-button, .craft-button-grayed {
+            font-size: 2vmax;
+        }
+
+    }
+
 
 </style>
