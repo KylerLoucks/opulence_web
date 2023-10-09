@@ -1550,6 +1550,13 @@
           this.buyingDragonCards = false
           this.showHand = false
           this.showChat = false
+        } else if (res == "logs") {
+          this.showChat = true
+          this.crafting = false
+          this.buyingShopCards = false
+          this.buyingDragonCards = false
+          this.showHand = false
+          this.showChat = false
         }
       });
   

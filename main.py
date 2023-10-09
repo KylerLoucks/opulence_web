@@ -42,6 +42,15 @@ authenticated_users = {}
 
 ddb = DynamoDBController()
 
+
+def opulence_init(game_id: str=None) -> Opulence:
+    config = Config()
+    opulence = Opulence(config=config, game_id=game_id)
+    opulence._load_game_state()
+    return opulence
+
+
+
 @socketio.on("redis-test")
 def redis_test(data):
     print(f"Retrieved redis test data: {data}")
@@ -101,11 +110,7 @@ def on_client_disconnect():
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         log(f"Player is Disconnecting....: {name}")
         if opulence.remove_player(sid, name, disconnected=True):
             print(f"Player Disconnected: {name}")
@@ -138,11 +143,7 @@ def attack_card_selected(data):
     if games_dict.get(gameID):
         opulence = games_dict[gameID]
     else:
-        opulence = Opulence(
-            config=Config(),
-            game_id=gameID
-        )
-        opulence._load_game_state()
+        opulence = opulence_init(game_id=gameID)
 
     # make sure the button only disapears if it's the turn of the player that clicks the attack button 
     if opulence._get_current_turn_sid() == sid:
@@ -163,11 +164,7 @@ def shop_button_pressed(data):
     if games_dict.get(gameID):
         opulence = games_dict[gameID]
     else:
-        opulence = Opulence(
-            config=Config(),
-            game_id=gameID
-        )
-        opulence._load_game_state()
+        opulence = opulence_init(game_id=gameID)
 
     print(data)
     # if it's the players turn who's pushing the buttons
@@ -184,6 +181,9 @@ def shop_button_pressed(data):
             emit('user-playing-attack-card', "false", room=gameID)
         elif data['button'] == "craft":
             emit('button-pressed', "craft", room=gameID)
+            emit('user-playing-attack-card', "false", room=gameID)
+        elif data['button'] == "logs":
+            emit('button-pressed', "logs", room=gameID)
             emit('user-playing-attack-card', "false", room=gameID) 
         
         emit('play-sound', 'muted_click', room=gameID)
@@ -198,11 +198,7 @@ def take_rune(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         rune = str(data)
         runes_taken = opulence.runes_taken
         print(f"player {sid} tried taking {rune}")
@@ -242,11 +238,7 @@ def play_card(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
 
         # record the number of living players
         alive_count = len(opulence._get_living_players())
@@ -297,11 +289,7 @@ def buy_card(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         card_idx = data['index']
         log(f"card at index: {card_idx} was attempted to be purchased")
         if opulence.buy_card(sid, card_idx):
@@ -339,11 +327,7 @@ def craft_card(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         if opulence.buy_basic_card(sid, element1=element1, element2=element2):
             log('crafting the card was successful')
             emit('game-logs', opulence.game_logs.logs, room=gameID)
@@ -378,11 +362,7 @@ def buy_dragon(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         dragon_idx = data['index']
         log(f"dragon at index: {dragon_idx} was attempted to be purchased")
         if opulence.buy_dragon(sid, dragon_idx):
@@ -468,11 +448,7 @@ def start_game():
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         
         if opulence.start_game(sid):
             # games_list[gameID]['started'] = True
@@ -496,11 +472,7 @@ def on_join(data):
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
             games_dict[gameID] = opulence
 
         # join as a spectator
@@ -538,11 +510,7 @@ def on_leave():
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
         else:
-            opulence = Opulence(
-                config=Config(),
-                game_id=gameID
-            )
-            opulence._load_game_state()
+            opulence = opulence_init(game_id=gameID)
         log("user left the room " + name)
         if opulence.remove_player(sid, name):
             leave_room(gameID) 
