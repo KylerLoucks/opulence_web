@@ -666,7 +666,7 @@ class Opulence:
                                             #dragons :dragons, \
                                             #leg_cards :leg_cards",
                         "ExpressionAttributeNames": {
-                            "#wins": "games_won",
+                            "#wins": "total_wins",
                             "#dragons": "dragons_owned",
                             "#leg_cards": "leg_cards_bought",
                         },

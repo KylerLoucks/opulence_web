@@ -111,7 +111,7 @@ class DynamoDBController:
                 'TableName': self.table,
                 'IndexName': 'OpenGamesIndex',
                 'Limit': limit,
-                'ReturnConsumedCapacity': 'TOTAL'
+                'ReturnConsumedCapacity': 'TOTAL',
             }
 
             if start_key:
@@ -121,7 +121,7 @@ class DynamoDBController:
             return resp
         except Exception as e:
             print("failed to scan database: ", e)
-            print("FAIL REASON: ", e.response.get("CancellationReasons"))
+            # print("FAIL REASON: ", e.response.get("CancellationReasons"))
     
     def delete_game(self, game_id, users):
         '''

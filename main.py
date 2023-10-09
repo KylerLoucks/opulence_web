@@ -64,9 +64,9 @@ def client_connect():
     log('client loaded the webpage: ' + str(sid))
 
 @socketio.on('query-games')
-def query():
-
-    response = ddb.find_games(limit=1)
+def query(data):
+    print("recieved query: ", data)
+    response = ddb.find_games(limit=4, start_key=data.get('lastKey'))
     pprint.pp(response)
     last_key = response.get('LastEvaluatedKey')
     deserialized = ddb.deserialize(data=response['Items'])

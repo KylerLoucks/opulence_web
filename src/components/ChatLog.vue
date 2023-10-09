@@ -84,7 +84,13 @@
     },
 
     mounted: function() {
-        this.regexReplaceInnerHTML()
+
+        try {
+            this.regexReplaceInnerHTML()
+        } catch (error) {
+            console.error('Error in mounted hook:', error);
+        }
+        
     },
 
     updated: function() {

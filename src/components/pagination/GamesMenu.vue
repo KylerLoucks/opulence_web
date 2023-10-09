@@ -2,6 +2,8 @@
 
 <div v-if="games && games.length > 0" class="parent-container">
   <Games class='games' v-for="game in displayedDict" :id="game.PK" :started="game.started" :key="game.PK" @joinRoom="joinRoom" ></Games>
+  
+  <!-- Pagination buttons -->
   <Pagination
     v-model="page"
     :page-count="maxPages"
@@ -19,6 +21,8 @@
 <script>
 import Games from "@/components/Games.vue"
 import Pagination from "./Pagination.vue"
+
+import { socket } from "@/websocket"
 
 export default {
   name: "GamesMenu",
@@ -39,7 +43,8 @@ export default {
   data() {
     return {
       page: 1,
-      itemsPerPage: 2,
+      itemsPerPage: 4,
+      socket,
     }
   },
   computed: {
@@ -69,6 +74,11 @@ export default {
 
     handlePageChange(pageNumber) {
       this.page = pageNumber
+    },
+
+    queryGames() {
+      const lastKey = this.nextToken
+      this.socket.emit('query-games', {lastKey})
     }
   },
   
@@ -78,8 +88,10 @@ export default {
 
   updated() {
     console.log(`${this.page} ${this.maxPages}`)
-    if (this.page == this.maxPages) {
+    console.log(`LAST KEY: ${this.nextToken}`)
+    if (this.page == this.maxPages && this.nextToken != null) {
       console.log("reached max page, querying for more items...")
+      this.queryGames()
     }
   }
 };

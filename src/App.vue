@@ -763,12 +763,12 @@
         
         shield_colors: [{"FIRE": "#dd221e"}, {"WATER":"#3f7ab6"}, {"DARK": "#200f34"}, {"WIND": "#b7b7b7"}, {"ARCANE": "#7332b7"}, {"EARTH": "#865b38"}, {"SOLAR": "#c9721f"}, {"NATURE":"#5ec234"}],
   
-        gamesList: {"1": {"gameID": "1", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "2": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "5": {"gameID": "5", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "6": {"gameID": "6", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "8": {"gameID": "8", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "9": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
-                  "10": {"gameID": "10", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "11": {"gameID": "11", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}
-        },
-        // gamesList: null,
+        // gamesList: {"1": {"gameID": "1", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "2": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+        //           "5": {"gameID": "5", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "6": {"gameID": "6", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+        //           "8": {"gameID": "8", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "9": {"gameID": "2", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']},
+        //           "10": {"gameID": "10", "started": "False", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}, "11": {"gameID": "11", "started": "True", "users": ['2304820348', '202308402834', '20384023840328', '2081023823048208', '20384023804']}
+        // },
+        gamesList: [],
         nextToken: null,
   
         // cards: {"1":{"runeVal":5,"spellVal":3,"runeType":"fire","spellType":1,"cost":{"wind":2,"fire":5,"earth":10,"water":2,"nature":3,"solar":8}},"2":{"runeVal":7,"spellVal":6,"runeType":"solar","spellType":2,"cost":{"wind":2,"solar":7,"water":3}},"3":{"runeVal":9,"spellVal":10,"runeType":"water","spellType":1,"cost":{"wind":2,"nature":10}},"4":{"runeVal":8,"spellVal":8,"runeType":"arcane","spellType":2,"cost":{"arcane":8,"solar":5,"water":3}},"5":{"runeVal":10,"spellVal":4,"runeType":"nature","spellType":1,"cost":{"earth":10,"water":3,"solar":5,"dark":6}},"6":{"runeVal":3,"spellVal":1,"runeType":"wind","spellType":1,"cost":{"dark":8,"water":11}},"7":{"runeVal":6,"spellVal":9,"runeType":"wind","spellType":1,"cost":{"wind":2}},"8":{"runeVal":4,"spellVal":5,"runeType":"wind","spellType":1,"cost":{"dark":10,"solar":5,"fire":11,"wind":2}}},
@@ -1201,7 +1201,8 @@
         this.playing = true
         this.socket.emit('play-button', {'username': String(this.userName)})
         console.log(this.userName)
-        this.socket.emit('query-games')
+        const lastKey = this.nextToken
+        this.socket.emit('query-games', {lastKey})
       },
   
       createGame: function() {
@@ -1235,11 +1236,16 @@
       
       // rooms with socket io
       joinRoom: function(id) { // emits to the server with the roomId to join (only handled on server side)
-        this.socket.emit('join-room', {'gameid': id})
-        this.ingame = true
-        this.current_room_id = id
-        this.gameStarted = this.gamesList[id].started
-        console.log(`"joined room id: ${id}"`)
+        try {
+          this.socket.emit('join-room', {'gameid': id})
+          this.ingame = true
+          this.current_room_id = id
+          this.gameStarted = this.gamesList[id].started
+          console.log(`"joined room id: ${id}"`)
+        }
+        catch (error) {
+          console.error('Error while joining room:', error);
+        }
       },
 
       leaveRoom: function() { // emits to the server with the roomId to leave (only handled on server side)
@@ -1555,9 +1561,14 @@
   
       // receive list of active games
       this.socket.on('list-games', (res) => {
-        this.gamesList = res.games
+        console.log('Active Games: ' + JSON.stringify(this.gamesList))
+        for (let i = 0; i < res.games.length; i++) {
+          this.gamesList.push(res.games[i])
+        }
+
+        // this.gamesList = res.games
         this.nextToken = res.last_key
-        console.log('Active Games: ' + JSON.stringify(res))
+        console.log('Active Games: ' + JSON.stringify(this.gamesList))
       });
   
       this.socket.on('join-room', () => {
