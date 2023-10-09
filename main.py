@@ -475,7 +475,7 @@ def start_game():
             opulence._load_game_state()
         
         if opulence.start_game(sid):
-            games_list[gameID]['started'] = True
+            # games_list[gameID]['started'] = True
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('game-started', True, room=gameID)
