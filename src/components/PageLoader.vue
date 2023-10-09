@@ -50,6 +50,9 @@
     },
 
     updated: function() {
+      if(document.readyState == "complete") {
+        this.isLoaded = true
+      }
     }
 };
 </script>
