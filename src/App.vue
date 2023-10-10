@@ -43,9 +43,7 @@
   
     
     <div v-if="(!ingame && AuthState.state.isAuthenticated || playing && !ingame)" class="games-parent-container" >
-      <h2>Select a game from the list or create one</h2>
-      <button class="create-game-button"  v-on:click="showGameConfigModal = true">Create Game</button>
-      <GamesMenu :games="gamesList" :next-token="nextToken" @joinRoom="joinRoom"></GamesMenu>
+      <GamesMenu :games="gamesList" :next-token="nextToken" @joinRoom="joinRoom" @showGameModal="showGameConfigModal = true"></GamesMenu>
     </div>
     
     
@@ -1765,6 +1763,16 @@
   }
 
 
+  .opulence-banner-container {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 8vh;
+  }
 
   .game-banner{
     max-height: var(--game-banner-height);
@@ -1798,6 +1806,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    margin-top: 8vh;
   }
   
   .input-name {

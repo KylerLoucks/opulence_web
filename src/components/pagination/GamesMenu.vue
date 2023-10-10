@@ -1,20 +1,33 @@
 <template>
 
-<div v-if="games && games.length > 0" class="parent-container">
-  <Games class='games' v-for="game in displayedDict" :id="game.PK" :started="game.started" :key="game.PK" @joinRoom="joinRoom" ></Games>
-  
-  <!-- Pagination buttons -->
-  <Pagination
-    v-model="page"
-    :page-count="maxPages"
-    :margin-pages="1"
-    :page-range="2"
-    :no-li-surround="true"
-    :first-last-button="true"
-    @page-change="handlePageChange"
-  ></Pagination>
-</div>
+<div class="parent">
+  <div class="hero-container"></div>
 
+
+
+  <div class="game-selection">
+    <h2>Select a game from the list or create one</h2>
+    <button class="create-game-button" v-on:click="$emit('showGameModal')" >Create Game</button>
+    
+    <div v-if="games && games.length > 0" >
+      <div class="games-container">
+        <Games class='games' v-for="game in displayedDict" :id="game.PK" :started="game.started" :players="game.players" :key="game.PK" @joinRoom="joinRoom" ></Games>
+      </div>
+      
+      <!-- Pagination buttons -->
+      <Pagination
+        class="pagination"
+        v-model="page"
+        :page-count="maxPages"
+        :margin-pages="1"
+        :page-range="2"
+        :no-li-surround="true"
+        :first-last-button="true"
+        @page-change="handlePageChange"
+      ></Pagination>
+    </div>
+  </div>
+</div>
 </template>
   
   
@@ -98,6 +111,45 @@ export default {
 </script>
   
 <style scoped>
+
+  .parent {
+    display: flex;
+    gap: 2em;
+  }
+  .hero-container {
+      background-color: rgba(0, 0, 0, 0.75);
+      height: 100%;
+      width: 100%;
+      min-height: 100vh;
+      min-width: 35vw;
+      max-width: 35vw;
+  }
+  .game-selection {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin-top: 8vh;
+  }
+
+  .games-container {
+    overflow: auto;
+    padding: 2em;
+    height: 50vh;
+    max-width: 35vw;
+  }
+
+  .games {
+    background-color: rgb(30, 30, 30);
+  }
+  
+
+  .pagination {
+    margin-top: 0em;
+  }
+
   .page-item {
     margin: 5px;
     background: linear-gradient(rgb(236, 75, 80));

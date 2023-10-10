@@ -1,9 +1,12 @@
 <template>
 
+    
+
     <button class="container" v-on:click="$emit('joinRoom', id.replace('GAME#', ''))">
         <div class="game-data-container">
             <div class="idvalue">Game ID: {{ id ? id.replace('GAME#', '') : ''}}</div>
             <div class="startedvalue">Started: {{started}}</div>
+            <div class="idvalue">Players: {{ players }}</div>
             <!-- <div class="total-users-container">
                 <span class="total-users">Users:</span> 
                 <div class="total-users" v-for="user in users" :key="user" >
@@ -24,7 +27,7 @@
    
     props: { // variables when instantiating this component
         id: String,
-        users: Array,
+        players: Number,
         started: String,
     },
     setup() {
@@ -33,7 +36,7 @@
         };
     },
     created: function() { // debugging the props
-        // console.log(this.users)
+        console.log(this.players)
     },
 
     updated: function() {
@@ -43,11 +46,13 @@
 </script>
   
 <style scoped>
+
+
     .container {
     height: max-content;
     
-    width: 25em;
-    height: 170px;
+    width: 100%;
+    height: 10em;
     background: transparent;
     border-radius: .25rem;
     transition: 1s;
@@ -63,6 +68,9 @@
     }
 
     .game-data-container {
+        display: flex;
+        flex-wrap: wrap;
+        grid-template-columns: 4fr 1fr 1fr;
         width: 100%;
         height: 100%;
         justify-items: center;
