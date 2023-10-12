@@ -1,0 +1,78 @@
+// In your router.js or router configuration file
+import { createRouter, createWebHistory } from 'vue-router'
+import AuthState from "./components/authenticate/AuthState"
+import { userPool } from './components/authenticate/UserPool'
+
+import { joinRoom } from './joinhelper'
+
+const routes = [
+  {
+    path: '/',
+    redirect: () => {
+			if (userPool.getCurrentUser()) {
+				return '/home';
+			} else {
+				return '/login';
+			}
+    },
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('./views/Login.vue'),
+		beforeEnter: (to, from, next) => {
+			if (userPool.getCurrentUser()) {
+				next('/home')
+			} else {
+				next();
+			}
+		}
+  },
+	{
+    path: '/home',
+    name: 'Home',
+    component: () => import('./views/Home.vue'),
+    beforeEnter: (to, from, next) => {
+      // Check if the user is authenticated
+      if (userPool.getCurrentUser() || AuthState.state.skipAuthentication) {
+        // User is authenticated, allow access to the route
+        next();
+      } else {
+        // User is not authenticated, redirect to the login page
+        next('/login');
+      }
+    }
+  },
+	{
+		path: '/game/:gameid', // Dynamic route with a parameter
+		name: 'game',
+		component: () => import('./views/Game.vue'),
+		props: true, // Pass route params as props to the component
+		beforeEnter: async (to, from, next) => {
+			// Call your WebSocket function to join the game room here
+			const gameId = to.params.gameid;
+			console.log(gameId)
+
+			// Call your component's joinGame method
+			await joinRoom(gameId)
+				.then(() => {
+					// Route navigation can proceed
+					next();
+				})
+				.catch((error) => {
+					console.log("error joining game: ", error)
+					// Handle the error or redirect as needed
+					next('/error');
+			});
+		}
+
+	},
+  // ...other routes
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router

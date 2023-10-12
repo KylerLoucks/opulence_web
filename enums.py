@@ -12,7 +12,7 @@ TYPES = [card.value for card in CardType]
 class DragonType(Enum):
     CLOUD = "CLOUD"
     CRYSTAL = "CRYSTAL"
-    DEEPSEA = "DEEP-SEA"
+    DEEPSEA = "DEEPSEA"
     DUST = "DUST"
     LAVA = "LAVA"
     LUNAR = "LUNAR"

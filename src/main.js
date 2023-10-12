@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import router from './router'
 
 /* import the fontawesome core */
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -17,4 +18,4 @@ library.add(faStopwatch, faClose, faCoins,
             faHammer, faCommentDots, faDragon,
             faLayerGroup, faUndo )
 
-createApp(App).component("fa", FontAwesomeIcon).mount('#app')
+createApp(App).use(router).component("fa", FontAwesomeIcon).mount('#app')

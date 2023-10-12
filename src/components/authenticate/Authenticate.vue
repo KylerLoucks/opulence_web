@@ -12,7 +12,7 @@
             <button class="confirm-input-btn">Sign In</button>
             
             <div class="lower-text-container">
-                <a>Need an account? <span class="clickable-text" v-on:click="showRegistration()">Sign Up</span> | or <span class="clickable-text" v-on:click="AuthState.skipAuth(true)">Skip Authentication</span></a>
+                <a>Need an account? <span class="clickable-text" v-on:click="showRegistration()">Sign Up</span> | or <span class="clickable-text" v-on:click="skipAuthentication()">Skip Authentication</span></a>
             </div>
         </form>
     </div>
@@ -28,7 +28,7 @@
             <h5 v-if="registerError" id="error">{{registerError}}</h5>
             <button class="confirm-input-btn">Sign Up</button>
             <div class="lower-text-container">
-                <a>Already have an account? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span> | or <span class="clickable-text" v-on:click="AuthState.skipAuth(true)">Skip Authentication</span></a>
+                <a>Already have an account? <span class="clickable-text" v-on:click="showSignIn()">Sign in</span> | or <span class="clickable-text" v-on:click="skipAuthentication()">Skip Authentication</span></a>
             </div>
         </form>
     </div>
@@ -178,6 +178,7 @@
                         let sub = result.getIdToken().decodePayload()['sub']
                         let username = result.getIdToken().decodePayload()['cognito:username']
                         this.socket.emit('auth', {'sub': sub, 'username': username})
+                        console.info("Successfully Logged in!")
                     },
                     // login failed
                     onFailure: (err) => {
@@ -290,6 +291,11 @@
                     }
                 });
 
+        },
+
+        skipAuthentication: function() {
+            this.AuthState.skipAuth(true)
+            this.$router.push('/home')
         }
 
 

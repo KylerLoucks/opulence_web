@@ -460,7 +460,6 @@ def start_game():
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
 
-
 #rooms (join/leave room)
 @socketio.on('join-room')
 def on_join(data):
@@ -484,7 +483,9 @@ def on_join(data):
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
+            emit('game-started', opulence.game_started, room=gameID)
             opulence.game_logs.logs = [] # clear logs for next action
+            return {'success': True}
 
         elif opulence.add_player(sid, name):
             log(f"added {name} to game")
@@ -495,8 +496,10 @@ def on_join(data):
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
             opulence.game_logs.logs = [] # clear logs for next action
+            return {'success': True}
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
+        return {'success': False}
 
     
 
