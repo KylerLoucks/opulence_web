@@ -123,8 +123,8 @@
         <div class="other-player-statistics">
           <template v-for="(user, userIndex) in GameState.state.current_game_users" :key="userIndex">
             <!-- render other player health/stats together -->
-            <div v-if="user.sid != this.GameState.state.sid" class="divider"></div>
-            <div class="other-player" v-if="user.sid != this.GameState.state.sid">
+            <div v-if="user.sid != GameState.state.sid" class="divider"></div>
+            <div class="other-player" v-if="user.sid != GameState.state.sid">
               <div class="hp-shield-bars">
                 <h3 class="player-name">Name: {{user.display_name}}</h3>
                 <div class="dragons-owned-container" >
@@ -738,7 +738,6 @@
           } else {
             this.utils.setMobile(false)
           }
-          console.log(`Is Mobile?: ${this.utils.state.isMobile}`)
       },
 
       viewSettings() {
@@ -890,6 +889,7 @@
         this.GameState.state.gameStarted = false
         this.GameState.state.isTurn = false // make buttons greyed-out
         this.GameState.state.logs = [];
+        this.$router.push({ name: 'Home' });
       },
 
       startGame: function() { // emits to the server with the roomId to leave (only handled on server side)
@@ -993,7 +993,7 @@
           console.log("CLEARING TIMER")
           clearInterval(this.GameState.state.timerId)
         }
-        this.GameState.state.GameState.state.turnSecond = '0',
+        this.GameState.state.turnSecond = '0',
         this.GameState.state.turnMinute = '0',
         this.GameState.state.turnHour = '0',
         this.GameState.state.turnDay = '0',
@@ -1246,8 +1246,8 @@
     // do things on first load of the DOM
     mounted: function() {
       console.log("STARTED??", this.GameState.state.gameStarted)
-      console.log("SID??", this.GameState.state.sid)
-      console.log("SID2??", this.GameState.state.currentTurnSid)
+      console.log("CURRENT SID: ", this.GameState.state.sid)
+      console.log("CURRENT TURN SID: ", this.GameState.state.currentTurnSid)
       this.pickRandomBackgroundOnDOMLoad()
 
       this.checkScreenSize();

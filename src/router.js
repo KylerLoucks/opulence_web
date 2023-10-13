@@ -5,6 +5,8 @@ import { userPool } from './components/authenticate/UserPool'
 
 import { joinRoom } from './joinhelper'
 
+import utils from './utils'
+
 const routes = [
   {
     path: '/',
@@ -47,14 +49,21 @@ const routes = [
 		path: '/game/:gameid', // Dynamic route with a parameter
 		name: 'game',
 		component: () => import('./views/Game.vue'),
-		props: true, // Pass route params as props to the component
+		props: false, // Pass route params as props to the component
 		beforeEnter: async (to, from, next) => {
 			// Call your WebSocket function to join the game room here
 			const gameId = to.params.gameid;
+			const createdGame = utils.state.createdGame
 			console.log(gameId)
+			console.log("route param creategame: ", createdGame)
 
-			// Call your component's joinGame method
-			await joinRoom(gameId)
+			if (createdGame) {
+				utils.setCreatedGame(false)
+				// Route navigation can proceed
+				next();
+			} else {
+				// Call your component's joinGame method
+				await joinRoom(gameId)
 				.then(() => {
 					// Route navigation can proceed
 					next();
@@ -63,7 +72,9 @@ const routes = [
 					console.log("error joining game: ", error)
 					// Handle the error or redirect as needed
 					next('/error');
-			});
+				});
+			}
+
 		}
 
 	},

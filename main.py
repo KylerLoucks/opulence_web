@@ -411,6 +411,11 @@ def create_game(data):
 
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
+
+        if name == '':
+            name = flask.session['sid']
+        flask.session['displayName'] = name
+
         opulence = Opulence(
             Config(max_players=max_players,
             runes_per_turn=runes_per_turn,
@@ -430,14 +435,17 @@ def create_game(data):
 
         games_list[game_id] = {"gameID": game_id, "started": opulence.game_started, "users": opulence.player_names}
         join_room(game_id) # join the flask room corresponding to the gameID of the newly created game
+        logs = opulence.game_logs.logs
         emit('current-room-id', str(flask.session['gameID'])) # send the client what their current gameID is
         emit('game-logs', opulence.game_logs.logs, room=game_id)
         emit('game-data', opulence._get_game_data(), room=game_id)
         emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=game_id)
         emit('user-sid', sid)
         opulence.game_logs.logs = [] # clear logs for next action
+        return {'success': True, 'gameid': opulence.game_id, 'logs': logs, 'game_data': opulence._get_game_data(), 'dragon_shop': opulence._get_dragon_shop_data(), 'sid': str(request.sid), 'current_turn_sid': opulence._get_current_turn_sid()}
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
+        return {'success': False}
 
 @socketio.on('start-game')
 def start_game():
@@ -466,7 +474,13 @@ def on_join(data):
     try:
         gameID = str(data['gameid'])
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
+
         name = flask.session['displayName']
+
+        if name == '':
+            name = flask.session['sid']
+        flask.session['displayName'] = name
+
         # TODO replace opulence ref w/ Opulence(game_id=game_id), opulence._load_game_state()
         if games_dict.get(gameID):
             opulence = games_dict[gameID]
@@ -478,6 +492,7 @@ def on_join(data):
         if opulence.game_started:
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID
+            logs = opulence.game_logs.logs
             emit('join-room')
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
@@ -485,18 +500,19 @@ def on_join(data):
             emit('current-turn-sid', opulence._get_current_turn_sid(), room=gameID)
             emit('game-started', opulence.game_started, room=gameID)
             opulence.game_logs.logs = [] # clear logs for next action
-            return {'success': True}
+            return {'success': True, 'sid': str(request.sid), 'logs': logs, 'game_data': opulence._get_game_data(), 'dragon_shop': opulence._get_dragon_shop_data(), 'current_turn_sid': opulence._get_current_turn_sid()}
 
         elif opulence.add_player(sid, name):
             log(f"added {name} to game")
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID
+            logs = opulence.game_logs.logs
             emit('join-room')
             emit('game-logs', opulence.game_logs.logs, room=gameID)
             emit('game-data', opulence._get_game_data(), room=gameID) # send the new game-data
             emit('dragon-shop-data', opulence._get_dragon_shop_data(), room=gameID)
             opulence.game_logs.logs = [] # clear logs for next action
-            return {'success': True}
+            return {'success': True, 'logs': logs, 'game_data': opulence._get_game_data(), 'dragon_shop': opulence._get_dragon_shop_data(), 'sid': str(request.sid), 'current_turn_sid': opulence._get_current_turn_sid()}
     except Exception as e:
         error(f"❌ {e}\n```{traceback.format_exc()[:1900]}```")
         return {'success': False}
@@ -518,6 +534,7 @@ def on_leave():
         if opulence.remove_player(sid, name):
             leave_room(gameID) 
             flask.session['gameID'] = None
+            # TODO: Remove the game from the db if no users are in the game
             # remove the game if nobody is in it
             if len(opulence.players) <= 0:
                 del games_list[gameID]
