@@ -295,8 +295,13 @@
         },
 
         skipAuthentication: function() {
-            this.AuthState.skipAuth(true)
-            this.$router.push({name: 'Home'})
+            try {
+                this.AuthState.skipAuth(true)
+                this.$router.push('/home')
+            } catch (err) {
+                console.error(`Error Skipping Auth ${err}`)
+            }
+            
         }
 
 

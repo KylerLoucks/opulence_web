@@ -129,9 +129,31 @@
       },
       methods: {
 
-        joinRoom: function(gameid) {
-            this.$router.push({ name: 'game', params: { gameid: gameid } });
+        // joinRoom: function(gameid) {
+        //     this.$router.push({ name: 'game', params: { gameid: gameid } });
 
+        // },
+
+        // rooms with socket io
+        joinRoom: function(gameid) {
+          try {
+            console.log("Attempting to join game: ", gameid);
+            this.socket.emit('join-room', { 'gameid': gameid }, (response) => {
+                console.log("RESPONSE:", response);
+                if (response.success) {
+                    this.utils.setJoinSuccessful(true)
+                    this.GameState.state.ingame = true;
+                    this.GameState.state.current_room_id = gameid;
+                    // this.GameState.state.gameStarted = this.GameState.state.gamesList[gameid].started;
+                    console.log("SUCCESS RESPONSE!!");
+                    this.$router.push({ name: 'game', params: { gameid: gameid } });
+                } else {
+                    console.log("RESPONSE WAS NOT SUCCESSFUL");
+                }
+            });
+          } catch (error) {
+              console.log('Error while joining room:', error);
+          }
         },
   
         checkScreenSize() {
