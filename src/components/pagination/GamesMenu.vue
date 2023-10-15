@@ -1,7 +1,27 @@
 <template>
 
 <div class="parent">
-  <div class="hero-container"></div>
+  <div class="hero-container">
+
+    <div class="opulence-banner-container">
+      <img src="@/assets/OPULENCE.png" class="opulence-banner-img" draggable="false"/>
+    </div>
+
+    <div>{{ AuthState.state.isAuthenticated }}</div>
+
+    <div v-if="!AuthState.state.isAuthenticated" class="play-container" >
+        <input class="input-name" v-model="GameState.state.userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
+        
+        <button  class="classic-btn" v-on:click="$emit('name')">Set your display name</button>
+        
+    </div>
+
+    <button class="classic-btn" v-on:click="AuthState.state.isAuthenticated ? $emit('signOut') : $router.push('/login')">
+      {{ AuthState.state.isAuthenticated ? 'Sign Out' : 'Sign In' }}
+    </button>
+
+    <button class="classic-btn" v-if="isDevEnvironment" v-on:click="utils.setCreatedGame(true), GameState.state.ingame = true; $router.push({ name: 'game', params: { gameid: 'TESTGAME'} })">Development Game</button>
+  </div>
 
 
 
@@ -34,8 +54,10 @@
 <script>
 import Games from "@/components/Games.vue"
 import Pagination from "./Pagination.vue"
-
+import AuthState from "../authenticate/AuthState";
 import { socket } from "@/websocket"
+import GameState from "@/GameState";
+import utils from "@/utils";
 
 export default {
   name: "GamesMenu",
@@ -45,7 +67,6 @@ export default {
   },
   props: { // variables when instantiating this component
     games: Object,
-    nextToken: Object,
   },
   setup() {
     return {
@@ -58,6 +79,10 @@ export default {
       page: 1,
       itemsPerPage: 4,
       socket,
+      AuthState,
+      GameState,
+      utils,
+      isDevEnvironment: process.env.VUE_APP_ENVIRONMENT === 'dev',
     }
   },
   computed: {
@@ -71,7 +96,7 @@ export default {
 
     // computed prop to update and calc the max amount of pages to display
     maxPages() {
-      if (this.nextToken) {
+      if (this.GameState.state.nextToken) {
         return Math.ceil(Object.keys(this.games).length / this.itemsPerPage) + 1;
       }
       return Math.ceil(Object.keys(this.games).length / this.itemsPerPage);
@@ -90,19 +115,19 @@ export default {
     },
 
     queryGames() {
-      const lastKey = this.nextToken
+      const lastKey = this.GameState.state.nextToken
       this.socket.emit('query-games', {lastKey})
     }
   },
   
-  created: function() { // debugging the props
-      
+  created: function() {
+    this.queryGames()
   },
 
   updated() {
     console.log(`${this.page} ${this.maxPages}`)
-    console.log(`LAST KEY: ${this.nextToken}`)
-    if (this.page == this.maxPages && this.nextToken != null) {
+    console.log(`LAST KEY: ${this.GameState.state.nextToken}`)
+    if (this.page == this.maxPages && this.GameState.state.nextToken != null) {
       console.log("reached max page, querying for more items...")
       this.queryGames()
     }
@@ -115,6 +140,30 @@ export default {
   .parent {
     display: flex;
     gap: 2em;
+    z-index: 1;
+  }
+
+  .classic-btn {
+    cursor: pointer;
+    padding: 1em;
+    width: 100%;
+    max-width: 15em;
+    color: #8E9092;
+    background-color: #24272C;
+    border-color: #2d3036;
+    margin-top: 5em;
+  }
+
+  .opulence-banner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 8vh;
+    width:100%;
+  }
+  .opulence-banner-img {
+    width: 100%;
+    max-width: 20em;
   }
   .hero-container {
       background-color: rgba(0, 0, 0, 0.75);
@@ -177,6 +226,18 @@ export default {
 
   .page-class {
     margin: 20px;
+  }
+
+
+  .input-name {
+    height: 2em;
+    width: 100%;
+    max-width: fit-content;
+    background-color: rgba(205, 226, 255, 0.74);
+    border-radius: .5em;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 2em;
+    text-align: center;
   }
 
 </style>

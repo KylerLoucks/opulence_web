@@ -30,7 +30,7 @@ const routes = [
 			}
 		}
   },
-	{
+  {
     path: '/home',
     name: 'Home',
     component: () => import('./views/Home.vue'),
@@ -45,7 +45,7 @@ const routes = [
       }
     }
   },
-	{
+  {
 		path: '/game/:gameid', // Dynamic route with a parameter
 		name: 'game',
 		component: () => import('./views/Game.vue'),
@@ -62,7 +62,6 @@ const routes = [
 				// Route navigation can proceed
 				next();
 			} else {
-				// Call your component's joinGame method
 				await joinRoom(gameId)
 				.then(() => {
 					// Route navigation can proceed

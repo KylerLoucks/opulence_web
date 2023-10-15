@@ -686,6 +686,8 @@
 	import GameState from "@/GameState";
 
   import utils from "@/utils";
+
+  import { clearTurnTimer } from "@/socketListeners";
   
   export default {
     name: 'GameView',
@@ -881,7 +883,7 @@
 			},
 
       leaveRoom: function() { // emits to the server with the roomId to leave (only handled on server side)
-        this.clearTurnTimer()
+        clearTurnTimer()
         this.socket.emit('leave-room')
         this.GameState.state.ingame = false
         this.GameState.state.current_room_id = null
@@ -889,7 +891,7 @@
         this.GameState.state.gameStarted = false
         this.GameState.state.isTurn = false // make buttons greyed-out
         this.GameState.state.logs = [];
-        this.$router.push({ name: 'Home' });
+        this.$router.push('/home');
       },
 
       startGame: function() { // emits to the server with the roomId to leave (only handled on server side)
@@ -985,53 +987,53 @@
         this.socket.emit('shop-buttons-pressed', {'button': "hand"})
       },
 
-      /**
-       * clear the countdown timer (reset to 0)
-       */
-      clearTurnTimer() {
-        if (this.GameState.state.timerId) {
-          console.log("CLEARING TIMER")
-          clearInterval(this.GameState.state.timerId)
-        }
-        this.GameState.state.turnSecond = '0',
-        this.GameState.state.turnMinute = '0',
-        this.GameState.state.turnHour = '0',
-        this.GameState.state.turnDay = '0',
-        this.GameState.state.countDate = null
-      },
+      // /**
+      //  * clear the countdown timer (reset to 0)
+      //  */
+      // clearTurnTimer() {
+      //   if (this.GameState.state.timerId) {
+      //     console.log("CLEARING TIMER")
+      //     clearInterval(this.GameState.state.timerId)
+      //   }
+      //   this.GameState.state.turnSecond = '0',
+      //   this.GameState.state.turnMinute = '0',
+      //   this.GameState.state.turnHour = '0',
+      //   this.GameState.state.turnDay = '0',
+      //   this.GameState.state.countDate = null
+      // },
 
-      /**
-       * Starts a countdown timer
-       * @param {*} countDate unix epoch formatted date (e.g. 1687110770)
-       */
-      countDown(countDate) {
+      // /**
+      //  * Starts a countdown timer
+      //  * @param {*} countDate unix epoch formatted date (e.g. 1687110770)
+      //  */
+      // countDown(countDate) {
         
-        const now = new Date().getTime();
+      //   const now = new Date().getTime();
   
-        // Check if the countdown has finished
-        if (now >= countDate) {
-          console.log('Countdown finished!');
-          clearInterval(this.GameState.state.timerId)
-          return;
-        }
+      //   // Check if the countdown has finished
+      //   if (now >= countDate) {
+      //     console.log('Countdown finished!');
+      //     clearInterval(this.GameState.state.timerId)
+      //     return;
+      //   }
 
-        const diff = countDate - now;
+      //   const diff = countDate - now;
 
-        const second = 1000;
-        const minute = second * 60;
-        const hour = minute * 60;
-        const day = hour * 24;
+      //   const second = 1000;
+      //   const minute = second * 60;
+      //   const hour = minute * 60;
+      //   const day = hour * 24;
 
-        const m = Math.floor((diff % hour) / minute);
-        const s = Math.floor((diff % minute) / second);
-        const h = Math.floor((diff % day) / hour);
-        const d = Math.floor((diff / day));
-        m < 10 ? this.GameState.state.turnMinute = '0' + m : this.GameState.state.turnMinute = m;
-        s < 10 ? this.GameState.state.turnSecond = '0' + s : this.GameState.state.turnSecond = s;
-        h < 10 ? this.GameState.state.turnHour = '0' + h : this.GameState.state.turnHour = h;
-        this.GameState.state.turnDay = d;
+      //   const m = Math.floor((diff % hour) / minute);
+      //   const s = Math.floor((diff % minute) / second);
+      //   const h = Math.floor((diff % day) / hour);
+      //   const d = Math.floor((diff / day));
+      //   m < 10 ? this.GameState.state.turnMinute = '0' + m : this.GameState.state.turnMinute = m;
+      //   s < 10 ? this.GameState.state.turnSecond = '0' + s : this.GameState.state.turnSecond = s;
+      //   h < 10 ? this.GameState.state.turnHour = '0' + h : this.GameState.state.turnHour = h;
+      //   this.GameState.state.turnDay = d;
         
-      }
+      // }
   
     },
   
@@ -1086,160 +1088,160 @@
       // });
 
       // Handle turn timer
-      this.socket.on('turn-timer', (timer) => {
-        this.GameState.state.countDate = new Date().getTime() + (timer > 0 ? timer + 1 : timer) * 1000;
-        this.GameState.state.timerId = setInterval(() => {
-          this.countDown(this.GameState.state.countDate)
-        }, 1000);
-      })
+      // this.socket.on('turn-timer', (timer) => {
+      //   this.GameState.state.countDate = new Date().getTime() + (timer > 0 ? timer + 1 : timer) * 1000;
+      //   this.GameState.state.timerId = setInterval(() => {
+      //     this.countDown(this.GameState.state.countDate)
+      //   }, 1000);
+      // })
 
 
 
-      this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server
-        this.connectedMsg = msg
-        console.log(this.connectedMsg)
-      });
+      // this.socket.on('Connection', (msg) => { // retrieve 'Connection' data from the server
+      //   this.connectedMsg = msg
+      //   console.log(this.connectedMsg)
+      // });
   
-      // connect socket handling
-      this.socket.on('user-sid', (res) => {
-        this.GameState.state.sid = res
-        console.log('your sid equals ' + this.GameState.state.sid)
-      });
+      // // connect socket handling
+      // this.socket.on('user-sid', (res) => {
+      //   this.GameState.state.sid = res
+      //   console.log('your sid equals ' + this.GameState.state.sid)
+      // });
   
-      this.socket.on('current-turn-sid', (res) => {
-        this.GameState.state.currentTurnSid = res
+      // this.socket.on('current-turn-sid', (res) => {
+      //   this.GameState.state.currentTurnSid = res
   
-        // if the sid that came back from the server matches
-        if (this.GameState.state.sid == this.GameState.state.currentTurnSid) {
-          this.GameState.state.isTurn = true // make buttons visible
-          var audio = new Audio(require('@/assets/mp3s/notification.mp3'))
-          audio.play()
-        } else {
-          this.GameState.state.isTurn = false
-        }
-        console.log('it is ' + this.GameState.state.currentTurnSid + ' turn')
-      });
+      //   // if the sid that came back from the server matches
+      //   if (this.GameState.state.sid == this.GameState.state.currentTurnSid) {
+      //     this.GameState.state.isTurn = true // make buttons visible
+      //     var audio = new Audio(require('@/assets/mp3s/notification.mp3'))
+      //     audio.play()
+      //   } else {
+      //     this.GameState.state.isTurn = false
+      //   }
+      //   console.log('it is ' + this.GameState.state.currentTurnSid + ' turn')
+      // });
   
-      // receive boolean that a user is about to pick who to attack
-      this.socket.on('user-playing-attack-card', (res) => {
-        if (res == "true") {
-          this.GameState.state.attacking = true
-        } else if (res == "false") {
-          this.GameState.state.attacking = false
-        }
+      // // receive boolean that a user is about to pick who to attack
+      // this.socket.on('user-playing-attack-card', (res) => {
+      //   if (res == "true") {
+      //     this.GameState.state.attacking = true
+      //   } else if (res == "false") {
+      //     this.GameState.state.attacking = false
+      //   }
         
-      });
+      // });
 
-      // receive string of the element that killed a player | play the relevant sound effect
-      this.socket.on('player-died', (res) => {
-        var audio = new Audio(require('@/assets/mp3s/player_died_by_' + res + '.mp3'))
-        audio.play()
-      });
+      // // receive string of the element that killed a player | play the relevant sound effect
+      // this.socket.on('player-died', (res) => {
+      //   var audio = new Audio(require('@/assets/mp3s/player_died_by_' + res + '.mp3'))
+      //   audio.play()
+      // });
 
-      this.socket.on('game-over', (res) => {
-        var audio = new Audio(require('@/assets/mp3s/victory.mp3'))
-        // var audio_tie_game = new Audio(require('@/assets/mp3s/reeverb.mp3'))
-        console.log('Player won the game: ' + res)
-        if (res == null) {
-          audio.play()
-        } else audio.play()
+      // this.socket.on('game-over', (res) => {
+      //   var audio = new Audio(require('@/assets/mp3s/victory.mp3'))
+      //   // var audio_tie_game = new Audio(require('@/assets/mp3s/reeverb.mp3'))
+      //   console.log('Player won the game: ' + res)
+      //   if (res == null) {
+      //     audio.play()
+      //   } else audio.play()
        
 
-      });
+      // });
 
-      // receive misc sound effect from the server and play it
-      this.socket.on('play-sound', (res) => {
-        var audio = new Audio(require('@/assets/mp3s/' + res + '.mp3'))
-        audio.play()
-      });
+      // // receive misc sound effect from the server and play it
+      // this.socket.on('play-sound', (res) => {
+      //   var audio = new Audio(require('@/assets/mp3s/' + res + '.mp3'))
+      //   audio.play()
+      // });
   
-      // receive the current room id that you are in from the server
-      this.socket.on('current-room-id', (res) => {
-        this.GameState.state.current_room_id = res
-        console.log('Received current game ID as: ' + res)
-      });
+      // // receive the current room id that you are in from the server
+      // this.socket.on('current-room-id', (res) => {
+      //   this.GameState.state.current_room_id = res
+      //   console.log('Received current game ID as: ' + res)
+      // });
   
-      // receive button pressed data when another player opens the shop, etc.
-      this.socket.on('button-pressed', (res) => {
-        if (res == "shop") {
-          this.GameState.state.buyingShopCards = true
-          this.GameState.state.buyingDragonCards = false
-          this.GameState.state.showHand = false
-          this.GameState.state.crafting = false
-          this.GameState.state.showChat = false
-        } else if (res == "dragon") {
-          this.GameState.state.buyingDragonCards = true
-          this.GameState.state.buyingShopCards = false
-          this.GameState.state.showHand = false
-          this.GameState.state.crafting = false
-          this.GameState.state.showChat = false
-        } else if (res == "hand") {
-          this.GameState.state.showHand = true
-          this.GameState.state.buyingShopCards = false
-          this.GameState.state.buyingDragonCards = false
-          this.GameState.state.crafting = false
-          this.GameState.state.showChat = false
-        } else if (res == "craft") {
-          this.GameState.state.crafting = true
-          this.GameState.state.buyingShopCards = false
-          this.GameState.state.buyingDragonCards = false
-          this.GameState.state.showHand = false
-          this.GameState.state.showChat = false
-        } else if (res == "logs") {
-          this.GameState.state.showChat = true
-          this.GameState.state.crafting = false
-          this.GameState.state.buyingShopCards = false
-          this.GameState.state.buyingDragonCards = false
-          this.GameState.state.showHand = false
-          this.GameState.state.showChat = false
-        }
-      });
+      // // receive button pressed data when another player opens the shop, etc.
+      // this.socket.on('button-pressed', (res) => {
+      //   if (res == "shop") {
+      //     this.GameState.state.buyingShopCards = true
+      //     this.GameState.state.buyingDragonCards = false
+      //     this.GameState.state.showHand = false
+      //     this.GameState.state.crafting = false
+      //     this.GameState.state.showChat = false
+      //   } else if (res == "dragon") {
+      //     this.GameState.state.buyingDragonCards = true
+      //     this.GameState.state.buyingShopCards = false
+      //     this.GameState.state.showHand = false
+      //     this.GameState.state.crafting = false
+      //     this.GameState.state.showChat = false
+      //   } else if (res == "hand") {
+      //     this.GameState.state.showHand = true
+      //     this.GameState.state.buyingShopCards = false
+      //     this.GameState.state.buyingDragonCards = false
+      //     this.GameState.state.crafting = false
+      //     this.GameState.state.showChat = false
+      //   } else if (res == "craft") {
+      //     this.GameState.state.crafting = true
+      //     this.GameState.state.buyingShopCards = false
+      //     this.GameState.state.buyingDragonCards = false
+      //     this.GameState.state.showHand = false
+      //     this.GameState.state.showChat = false
+      //   } else if (res == "logs") {
+      //     this.GameState.state.showChat = true
+      //     this.GameState.state.crafting = false
+      //     this.GameState.state.buyingShopCards = false
+      //     this.GameState.state.buyingDragonCards = false
+      //     this.GameState.state.showHand = false
+      //     this.GameState.state.showChat = false
+      //   }
+      // });
   
-        // receive (boolean) if game started
-        this.socket.on('game-started', (res) => {
-          this.GameState.state.gameStarted = res
-          console.log("from server: Game started ? " + res)
-      });
+      //   // receive (boolean) if game started
+      //   this.socket.on('game-started', (res) => {
+      //     this.GameState.state.gameStarted = res
+      //     console.log("from server: Game started ? " + res)
+      // });
   
-      // receive list of active games
-      this.socket.on('list-games', (res) => {
-        console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
-        for (let i = 0; i < res.games.length; i++) {
-          this.GameState.state.gamesList.push(res.games[i])
-        }
+      // // receive list of active games
+      // this.socket.on('list-games', (res) => {
+      //   console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
+      //   for (let i = 0; i < res.games.length; i++) {
+      //     this.GameState.state.gamesList.push(res.games[i])
+      //   }
 
-        // this.GameState.state.gamesList = res.games
-        this.GameState.state.nextToken = res.last_key
-        console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
-      });
+      //   // this.GameState.state.gamesList = res.games
+      //   this.GameState.state.nextToken = res.last_key
+      //   console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
+      // });
   
-      this.socket.on('join-room', () => {
-        this.GameState.state.ingame = true
-        console.log('In game?: ' + this.GameState.state.ingame)
-      });
-  
-  
-      this.socket.on('game-logs', (res) => {
-        res.map((log) => {
-          this.GameState.state.logs.push(log)
-        })
-        // old implementation
-        // this.GameState.state.logs = res
-      });
-  
-      // grab dict of user and card shop game data from server
-      this.socket.on('game-data', (res) => {
-        console.log("got game data:", res)
-        this.GameState.state.current_game_users = res['user_data']
-        this.GameState.state.current_game_card_shop = res['card_shop']['cards']
-        console.log("grabbing game data")
-      });
+      // this.socket.on('join-room', () => {
+      //   this.GameState.state.ingame = true
+      //   console.log('In game?: ' + this.GameState.state.ingame)
+      // });
   
   
-      // dragon shop data
-      this.socket.on('dragon-shop-data', (res) => {
-        this.GameState.state.current_game_dragon_shop = res['dragons']
-      });
+      // this.socket.on('game-logs', (res) => {
+      //   res.map((log) => {
+      //     this.GameState.state.logs.push(log)
+      //   })
+      //   // old implementation
+      //   // this.GameState.state.logs = res
+      // });
+  
+      // // grab dict of user and card shop game data from server
+      // this.socket.on('game-data', (res) => {
+      //   console.log("got game data:", res)
+      //   this.GameState.state.current_game_users = res['user_data']
+      //   this.GameState.state.current_game_card_shop = res['card_shop']['cards']
+      //   console.log("grabbing game data")
+      // });
+  
+  
+      // // dragon shop data
+      // this.socket.on('dragon-shop-data', (res) => {
+      //   this.GameState.state.current_game_dragon_shop = res['dragons']
+      // });
       
     },
   
@@ -1282,7 +1284,7 @@
   
   </script>
   
-  <style>
+  <style scoped>
   :root{
       --game-banner-height: 2.5em;
       --game-footer-height: 4em;
@@ -1401,18 +1403,6 @@
     opacity: 0;
   }
 
-
-  .opulence-banner-container {
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    left: 0;
-    top: 0;
-    right: 0;
-    height: 8vh;
-  }
-
   .game-banner{
     max-height: var(--game-banner-height);
     position: absolute;
@@ -1434,11 +1424,6 @@
     margin-left: .5em;
   }
 
-  .opulence-banner{
-    max-width: 100vw;
-    width: min(75vw, 20em);
-  }
-
   /* play section */
   .play-container {
     display: flex;
@@ -1448,51 +1433,6 @@
     margin-top: 8vh;
   }
   
-  .input-name {
-    height: 2em;
-    width: 100%;
-    max-width: fit-content;
-    background-color: rgba(205, 226, 255, 0.74);
-    border-radius: .5em;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 2em;
-    text-align: center;
-  }
-  
-  .play-button {
-    width: 200px;
-    height: 46px;
-    margin: 10px;
-  }
-  
-  .create-game-button {
-    width: 50%;
-    height: 3em;
-    margin: 1em;
-    font-size: 1em;
-    background-color: #1eab4800; 
-    border: 2px solid #1eab48;
-    color: white;
-    transition: background-color .3s ease-in-out;
-  }
-  .create-game-button:hover {
-    background-color: #1eab48
-  }
-  
-  .leave-room-button {
-    background-color: #7d4646; 
-    border: 2px solid #412929;
-    border-radius: 6px;
-    color: white;
-    padding: .5rem .5rem;
-    text-align: center;
-    text-decoration: none;
-    
-    font-size: clamp(.5em, 1vw, 2em);
-  }
-  .leave-room-button:hover {
-    background-color: #946767
-  }
 
   .gameid-text {
     font-size: min(1.5vw, 1.17em);

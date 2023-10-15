@@ -178,6 +178,7 @@
                         let sub = result.getIdToken().decodePayload()['sub']
                         let username = result.getIdToken().decodePayload()['cognito:username']
                         this.socket.emit('auth', {'sub': sub, 'username': username})
+                        this.$router.push({name: 'home'})
                         console.info("Successfully Logged in!")
                     },
                     // login failed
@@ -295,7 +296,7 @@
 
         skipAuthentication: function() {
             this.AuthState.skipAuth(true)
-            this.$router.push('/home')
+            this.$router.push({name: 'Home'})
         }
 
 

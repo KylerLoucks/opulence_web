@@ -9,29 +9,15 @@
           </div>
       </Transition>
       <span v-if="!GameState.state.showSettings" id="mobile-hamburger" class="material-icons" v-on:click="GameState.state.showSettings = true">menu</span>
-  
-  
-  
-      <div v-if="!GameState.state.ingame" class="opulence-banner-container">
-        <img src="@/assets/OPULENCE.png" class="opulence-banner" draggable="false"/>
-      </div>
       
       <!-- <Authenticate v-if="!AuthState.state.isAuthenticated && !AuthState.state.skipAuthentication"></Authenticate> -->
-  
-   
-      <button v-if="AuthState.state.isAuthenticated && !GameState.state.ingame" class="create-game-button" v-on:click="signOut()">Sign Out</button>
       
       
-      <div v-if="!AuthState.state.isAuthenticated && AuthState.state.skipAuthentication && !playing" class="play-container" >
-        <input class="input-name" v-model="userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
-        
-        <button  class="create-game-button"  v-on:click="play">Play</button>
-        
-      </div>
+
     
       
-      <div v-if="playing" class="games-parent-container" >
-        <GamesMenu :games="GameState.state.gamesList" :next-token="GameState.state.nextToken" @joinRoom="joinRoom" @showGameModal="GameState.state.showGameConfigModal = true"></GamesMenu>
+      <div class="games-parent-container" >
+        <GamesMenu :games="GameState.state.gamesList" @joinRoom="joinRoom" @signOut="signOut()" @name="setDisplayName()" @showGameModal="GameState.state.showGameConfigModal = true"></GamesMenu>
       </div>
 
       <transition name="config-fade" appear>
@@ -139,15 +125,12 @@
           AuthState,
           GameState,
           socket,
-
-          playing: false,
-          userName: '',
         }
       },
       methods: {
 
         joinRoom: function(gameid) {
-            this.$router.push({ name: 'game', params: { gameid: gameid }, query: { createGame: false} });
+            this.$router.push({ name: 'game', params: { gameid: gameid } });
 
         },
   
@@ -205,17 +188,15 @@
             var cognitoUser = userPool.getCurrentUser()
             if (cognitoUser != null) { 
                 cognitoUser.signOut(() => {
-                    this.AuthState.setAuthenticated(false)
+                  this.AuthState.setAuthenticated(false)
+                  this.$router.push('/login')
               });
             }
         },
     
-        play() {
-          this.playing = true
-          this.socket.emit('play-button', {'username': String(this.userName)})
-          console.log(this.userName)
-          const lastKey = this.nextToken
-          this.socket.emit('query-games', {lastKey})
+        setDisplayName() {
+          this.socket.emit('play-button', {'username': String(this.GameState.state.userName)})
+          console.log(this.GameState.state.userName)
         },
     
         createGame: function() {
@@ -257,71 +238,96 @@
   
       // before the DOM is mounted
       beforeMount: function() {
+
+        // Grab cognito user from local storage
+        const cognitoUser = userPool.getCurrentUser()
+        console.log("current_user: ", userPool.getCurrentUser())
+        if (cognitoUser != null) {
+
+          // check if user is authenticated
+          cognitoUser.getSession((err, session) => {
+            if (err) {
+            alert(err.message || JSON.stringify(err))
+            }
+            // user is valid
+            this.AuthState.setAuthenticated(session.isValid())
+
+            cognitoUser.getUserAttributes((err, attributes) => {
+            if (err) {
+                console.log("Error when getting user attributes: ", err)
+            }
+            let sub = attributes[0].getValue()
+            let username = cognitoUser.getUsername()
+            // console.log("Attributes: ", attributes)
+            this.socket.emit('auth', {'sub': sub, 'username': username})
+            })
+          })
+        }
       },
   
       
       created: function() {
   
         // connect socket handling
-        this.socket.on('user-sid', (res) => {
-          this.GameState.state.sid = res
-          console.log('your sid equals ' + this.GameState.state.sid)
-        });
+        // this.socket.on('user-sid', (res) => {
+        //   this.GameState.state.sid = res
+        //   console.log('your sid equals ' + this.GameState.state.sid)
+        // });
     
-        this.socket.on('current-turn-sid', (res) => {
-          this.GameState.state.currentTurnSid = res
+        // this.socket.on('current-turn-sid', (res) => {
+        //   this.GameState.state.currentTurnSid = res
     
-          // if the sid that came back from the server matches
-          if (this.GameState.state.sid == this.GameState.state.currentTurnSid) {
-            this.GameState.state.isTurn = true // make buttons visible
-            var audio = new Audio(require('@/assets/mp3s/notification.mp3'))
-            audio.play()
-          } else {
-            this.GameState.state.isTurn = false
-          }
-          console.log('it is ' + this.GameState.state.currentTurnSid + ' turn')
-        });
+        //   // if the sid that came back from the server matches
+        //   if (this.GameState.state.sid == this.GameState.state.currentTurnSid) {
+        //     this.GameState.state.isTurn = true // make buttons visible
+        //     var audio = new Audio(require('@/assets/mp3s/notification.mp3'))
+        //     audio.play()
+        //   } else {
+        //     this.GameState.state.isTurn = false
+        //   }
+        //   console.log('it is ' + this.GameState.state.currentTurnSid + ' turn')
+        // });
     
         // receive list of active games
-        this.socket.on('list-games', (res) => {
-          console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
-          for (let i = 0; i < res.games.length; i++) {
-            this.GameState.state.gamesList.push(res.games[i])
-          }
+        // this.socket.on('list-games', (res) => {
+        //   console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
+        //   for (let i = 0; i < res.games.length; i++) {
+        //     this.GameState.state.gamesList.push(res.games[i])
+        //   }
   
-          // this.gamesList = res.games
-          this.GameState.state.nextToken = res.last_key
-          console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
-        });
+        //   // this.gamesList = res.games
+        //   this.GameState.state.nextToken = res.last_key
+        //   console.log('Active Games: ' + JSON.stringify(this.GameState.state.gamesList))
+        // });
     
-        this.socket.on('join-room', () => {
-          this.GameState.state.ingame = true
-          console.log('In game?: ' + this.GameState.state.ingame)
-        });
+        // this.socket.on('join-room', () => {
+        //   this.GameState.state.ingame = true
+        //   console.log('In game?: ' + this.GameState.state.ingame)
+        // });
     
 
-        this.socket.on('game-logs', (res) => {
-          res.map((log) => {
-            this.GameState.state.logs.push(log)
-          })
-          // old implementation
-          // this.GameState.state.logs = res
-        });
+        // this.socket.on('game-logs', (res) => {
+        //   res.map((log) => {
+        //     this.GameState.state.logs.push(log)
+        //   })
+        //   // old implementation
+        //   // this.GameState.state.logs = res
+        // });
   
 
-        // grab dict of user and card shop game data from server
-        this.socket.on('game-data', (res) => {
-          console.log("got game data:", res)
-          this.GameState.state.current_game_users = res['user_data']
-          this.GameState.state.current_game_card_shop = res['card_shop']['cards']
-          console.log("grabbing game data")
-        });
+        // // grab dict of user and card shop game data from server
+        // this.socket.on('game-data', (res) => {
+        //   console.log("got game data:", res)
+        //   this.GameState.state.current_game_users = res['user_data']
+        //   this.GameState.state.current_game_card_shop = res['card_shop']['cards']
+        //   console.log("grabbing game data")
+        // });
     
     
-        // // dragon shop data
-        this.socket.on('dragon-shop-data', (res) => {
-          this.GameState.state.current_game_dragon_shop = res['dragons']
-        });
+        // // // dragon shop data
+        // this.socket.on('dragon-shop-data', (res) => {
+        //   this.GameState.state.current_game_dragon_shop = res['dragons']
+        // });
         
       },
     
@@ -420,6 +426,8 @@
       display: flex;
       flex-direction: column;
       margin: 5px;
+      max-height: 20em;
+      overflow-y: auto;
     }
   
     .input-game-config {
@@ -482,16 +490,6 @@
     }
   
   
-    .opulence-banner-container {
-      position: absolute;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      left: 0;
-      top: 0;
-      right: 0;
-      height: 8vh;
-    }
   
     .game-banner{
       max-height: var(--game-banner-height);
@@ -528,16 +526,7 @@
       margin-top: 8vh;
     }
     
-    .input-name {
-      height: 2em;
-      width: 100%;
-      max-width: fit-content;
-      background-color: rgba(205, 226, 255, 0.74);
-      border-radius: .5em;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 2em;
-      text-align: center;
-    }
+
     
     .play-button {
       width: 200px;

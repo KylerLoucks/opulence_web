@@ -8,6 +8,9 @@
   <script>
   // import { ref } from "vue";
   
+  // Register websocket event listeners
+  import './socketListeners'
+  
   export default {
     name: 'App',
     components: {
