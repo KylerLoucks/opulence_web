@@ -10,7 +10,10 @@ import time
 from threading import Timer
 import threading
 import boto3
-
+import os
+from dotenv import load_dotenv
+ENV = os.environ.get("PYTHON_ENV", "dev")
+load_dotenv(f'.env.python.{ENV}')
 
 def test_threading_turn_timer():
     games = {}
@@ -58,9 +61,28 @@ def test_dynamodb_controller():
     data = ddb.convert_decimal_to_int(deserialized)
     return data
 
+def test_compare_sid_with_cognito_user():
+    os.environ['AWS_PROFILE'] = 'cheeks'
+    cognito_client = boto3.client('cognito-idp', region_name='us-east-1')
+    user_pool_id = os.environ['USER_POOL_ID']
+    username = "test"
+    sub = "1fa57141-2bf7-489a-abdf-60eba436e4d6"
+    try:
+        response = cognito_client.admin_get_user(
+            UserPoolId=user_pool_id,
+            Username=username
+        )
+        # Check if the players id matches the sub of the user in Cognito
+        if any(att['Value'] == sub for att in response['UserAttributes']):
+                
+            # If the user is found, response will contain the user's attributes
+            print(f"User with ID '{sub}' matches the 'sub' attribute.")
+    except cognito_client.exceptions.UserNotFoundException:
+        print(f"No user with Username '{username}' found in the user pool.")
+
 
 if __name__ == "__main__":
-    test_dynamodb_save_state()
+    # test_dynamodb_save_state()
 
     # test_dynamodb_load_state()
     # test_basic_game()

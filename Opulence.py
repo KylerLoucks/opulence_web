@@ -143,6 +143,75 @@ class Opulence:
             print("FAIL REASON: ", e.response.get("CancellationReasons"))
             return None
         return resp
+    
+
+    def _delete_player_state(self, player_sid):
+        """
+        Delete a players state from the database.
+        """
+        self.boring_turn = False
+        time_to_live = str(time.time() + 5 * 60 * 60).split(".")[0]
+
+        transact_items=[
+            {
+                # Update Game record
+                "Update": {
+                    "TableName": self.table_name,
+                    "Key": {
+                        "PK": { "S": f"GAME#{self.game_id}" },
+                        "SK": { "S": f"GAME#{self.game_id}" },
+                    },
+                    "UpdateExpression": "SET #started = :started, #rt = :runes_taken, #go = :game_over, \
+                                        #tied = :tied, #turn = :turn, #crd_shop = :crd_shop, \
+                                        #drg_shop = :drg_shop, #time_to_live = :ttl, #game_config = :config, \
+                                        #players = :players",
+                    "ExpressionAttributeNames": {
+                        "#started": "started",
+                        "#go": "game_over",
+                        "#tied": "tied_game",
+                        "#turn": "turn",
+                        "#rt": "runes_taken",
+                        "#crd_shop": "card_shop",
+                        "#drg_shop": "dragon_shop",
+                        "#time_to_live": "TTL",
+                        "#game_config": "config",
+                        "#players": "players"
+
+                    },
+                    "ExpressionAttributeValues": {
+                        ":started": { "S": str(self.game_started) },
+                        ":runes_taken": { "N": str(self.runes_taken) },
+                        ":game_over": { "BOOL": self.game_over },
+                        ":turn": { "N": str(self.turn) },
+                        ":tied": { "BOOL": self.tied_game },
+                        ":crd_shop": { "S": json.dumps(self.card_shop.__dict__()) },
+                        ":drg_shop": { "S": json.dumps(self.dragon_shop.__dict__()) },
+                        ":config": { "S": json.dumps(self.config.__dict__()) },
+                        ":players": { "N": str(len(self.players))},
+                        ":ttl": { "N": str(time_to_live) }
+                    }
+                }
+            }
+        ]
+
+        transact_items.append(
+            {
+                "Delete": {
+                    "TableName": self.table_name,
+                    "Key": {
+                        "PK": { "S": f"GAME#{self.game_id}" },
+                        "SK": { "S": f"USER#{player_sid}" },
+                    },
+                }
+            }
+        )
+        try:
+            resp = self.dynamodb.transact_write_items(TransactItems=transact_items, ReturnConsumedCapacity="INDEXES")
+        except Exception as e:
+            print("Failed to Delete individual player from the game state", e)
+            print("FAIL REASON: ", e.response.get("CancellationReasons"))
+            return None
+        return resp
 
     def _save_state(self):
         """
@@ -345,6 +414,7 @@ class Opulence:
         self.player_sids.append(sid)
         self.player_names.append(name)
         self.game_logs.join_game_log(self.players[sid].display_name)
+        self._save_player_state(player=self.players[sid])
         return True
 
     def remove_player(self, sid: str, name: str=None, disconnected=False):
@@ -356,6 +426,8 @@ class Opulence:
             self.player_sids.remove(sid)
             if name in self.player_names:
                 self.player_names.remove(name)
+
+            self._delete_player_state(player_sid=sid)
             return True
         
         
@@ -369,6 +441,8 @@ class Opulence:
                 del self.players[sid]
                 if name in self.player_names:
                     self.player_names.remove(name)
+
+                self._delete_player_state(player_sid=sid)
                 self._next_turn(player_left_during_turn=True)
                 return True
             else:
@@ -385,6 +459,7 @@ class Opulence:
             self.player_sids.remove(sid)
             if name in self.player_names:
                 self.player_names.remove(name)
+            self._delete_player_state(player_sid=sid)
             return True
 
     def take_rune(self, sid: str, rune: str):
@@ -617,6 +692,7 @@ class Opulence:
         # return list(self._get_living_players().keys())[self.turn]
         return self.players[self.player_sids[self.turn]].sid
     
+
     def _check_winner(self):
         """
         return the player id of the player who won
@@ -648,7 +724,28 @@ class Opulence:
         """
         print("UPDATING USER DATA")
         transact_items = []
+        cognito_client = boto3.client('cognito-idp', region_name='us-east-1')
+        user_pool_id = os.environ['USER_POOL_ID']
+
         for id, player in self.players.items():
+            username = player.display_name
+            sub = player.sid
+
+            # Only persist user data of cognito users
+            try:
+                response = cognito_client.admin_get_user(
+                    UserPoolId=user_pool_id,
+                    Username=username
+                )
+                # Check if the players id matches the sub of the user in Cognito
+                if any(att['Value'] == sub for att in response['UserAttributes']):
+                    print(f"User with ID '{sub}' matches the 'sub' attribute.")
+                else:
+                    continue
+            except cognito_client.exceptions.UserNotFoundException:
+                print(f"No user with Username '{username}' found in the user pool.")
+                continue
+
             wins = 1 if player.won else 0
             dragons_owned = player.dragons_owned
             legendary_cards_bought = player.leg_cards_bought
