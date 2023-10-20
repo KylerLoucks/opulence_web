@@ -82,6 +82,15 @@ def query(data):
     data = ddb.convert_decimal_to_int(deserialized) # Convert 'Decimal' objects to ints
     emit('list-games', {"games": data, "last_key": last_key})
 
+@socketio.on('get-user')
+def get_user(data):
+    print("got user event: ", data)
+    response = ddb.get_user(userid=data.get('sid'))
+    pprint.pp(response)
+    deserialized = ddb.deserialize(data=response['Item'])
+    data = ddb.convert_decimal_to_int(deserialized)
+    emit('user-stats', {"stats": data})
+
 @socketio.on('auth')
 def authenticate(data):
     sub = data.get('sub')

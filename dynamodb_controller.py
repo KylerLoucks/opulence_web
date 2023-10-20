@@ -151,6 +151,19 @@ class DynamoDBController:
 
         except Exception as e:
             print("failed to delete game: ", e)
+
+    def get_user(self, userid):
+        response = self.dynamodb.get_item(
+            TableName=self.table,
+            Key={
+                'PK': {"S": f"USER#{userid}"},
+                'SK': {"S": f"USER#{userid}"}
+            },
+            
+            ReturnConsumedCapacity='TOTAL',
+
+        )
+        return response
     
     # Deserialize dynamodb data types for more readable dictionaries
     def deserialize(self, data):
@@ -163,9 +176,15 @@ class DynamoDBController:
 
         deserializer = TypeDeserializer()
         deserialized_data = []
-        for item in data:
-            python_data = {k: deserializer.deserialize(v) for k,v in item.items()}
+
+        # If the data isn't a list:
+        if isinstance(data, dict):
+            python_data = {k: deserializer.deserialize(v) for k,v in data.items()}
             deserialized_data.append(python_data)
+        elif isinstance(data, list):
+            for item in data:
+                python_data = {k: deserializer.deserialize(v) for k,v in item.items()}
+                deserialized_data.append(python_data)
         return deserialized_data
     
     def convert_decimal_to_int(self, data):
@@ -186,11 +205,13 @@ class DynamoDBController:
 
 
 
-# controller = DynamoDBController()
-# data = controller.find_games(3)
-# deserialized = controller.deserialize(data.get('Items'))
-# pprint.pprint(deserialized)
-# pprint.pprint(data)
+controller = DynamoDBController()
+user = "T_nZPAzhkDQ1RB7fAAAD"
+data = controller.get_user(user)
+item = data['Item']
+deserialize = controller.deserialize(data=item)
+type_convert = controller.convert_decimal_to_int(deserialize)
+pprint.pprint(type_convert)
 
 # last_key = data.get('LastEvaluatedKey')
 # data = controller.find_gaames(3, last_key)
