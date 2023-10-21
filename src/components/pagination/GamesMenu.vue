@@ -1,28 +1,83 @@
 <template>
 
 <div class="parent">
+
+
+
+
+
   <div class="hero-container">
 
     <div class="opulence-banner-container">
       <img src="@/assets/OPULENCE.png" class="opulence-banner-img" draggable="false"/>
     </div>
 
-    <div>{{ AuthState.state.isAuthenticated }}</div>
+    <div v-if="showStats" class="stats-container">
+      <table class="table">
+        <thead>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="stats-txt">Skill Level</td>
+            <th class="stats-txt">0</th>
+          </tr>
+          <tr>
+            <td class="stats-txt">Total Wins</td>
+            <th class="stats-txt">0</th>
+          </tr>
+          <tr class="stats-txt">
+            <td class="stats-txt">XP To Next Level</td>
+            <th class="stats-txt">200</th>
+          </tr>
+          <tr class="stats-txt">
+            <td class="stats-txt">Legendary Cards Bought</td>
+            <th class="stats-txt">100</th>
+          </tr>
+          <tr class="stats-txt">
+            <td class="stats-txt">Dragons Bought</td>
+            <th class="stats-txt">2</th>
+          </tr>
+        </tbody>
 
-    <div v-if="!AuthState.state.isAuthenticated" class="play-container" >
+      </table>
+
+      <div class="player-icon" >
+        <img v-on:click="selectIcon = !selectIcon" draggable="false" :src="iconPath(selectedIcon)" style="width: 100%; height: 100%;"/>
+          
+        <div v-if="selectIcon" class="icon-selection">
+          <div v-for="(img) in ownedIcons" :key="img">
+            <img
+              v-if="img !== selectedIcon"
+              class="icons"
+              v-on:click="setIcon(img)"
+              :src="iconPath(img)"
+              :style="{ borderColor: iconMappings.state[img] }"
+              draggable="false"
+            />
+          </div>
+        </div>
+
+        <img>
+      </div>
+
+    </div>
+
+    
+
+    <div v-if="!AuthState.state.isAuthenticated && !showStats" class="play-container" >
         <input class="input-name" v-model="GameState.state.userName" type="text" placeholder="[username]" maxlength="20" pattern="[A-z0-9\s]">
         
         <button  class="classic-btn" v-on:click="$emit('name')">Set your display name</button>
         
     </div>
 
-    <button class="classic-btn" v-on:click="AuthState.state.isAuthenticated ? $emit('signOut') : $router.push('/login')">
+    <button v-if="!showStats" class="classic-btn" v-on:click="AuthState.state.isAuthenticated ? $emit('signOut') : $router.push('/login')">
       {{ AuthState.state.isAuthenticated ? 'Sign Out' : 'Sign In' }}
     </button>
+    <button class="classic-btn" v-on:click="showStats = !showStats, selectIcon = false">{{ showStats ? 'Back' : 'Stats' }}</button>
 
-    <button class="classic-btn" v-if="isDevEnvironment" v-on:click="utils.setCreatedGame(true), GameState.state.ingame = true; $router.push({ name: 'game', params: { gameid: 'TESTGAME'} })">Development Game</button>
+    <button class="classic-btn" v-if="isDevEnvironment && !showStats" v-on:click="utils.setCreatedGame(true), GameState.state.ingame = true; $router.push({ name: 'game', params: { gameid: 'TESTGAME'} })">Development Game</button>
   </div>
-
 
 
   <div class="game-selection">
@@ -58,6 +113,7 @@ import AuthState from "../authenticate/AuthState";
 import { socket } from "@/websocket"
 import GameState from "@/GameState";
 import utils from "@/utils";
+import iconMappings from "@/iconMappings"
 
 export default {
   name: "GamesMenu",
@@ -82,7 +138,12 @@ export default {
       AuthState,
       GameState,
       utils,
+      iconMappings,
       isDevEnvironment: process.env.VUE_APP_ENVIRONMENT === 'dev',
+      showStats: true,
+      selectIcon: false,
+      selectedIcon: "default",
+      ownedIcons: ['default', 'elemental_scroll', 'arcane_arrow', 'arcane_elixir', 'arcane_key', 'arcane_rune', 'arcane_sphere', 'dust_sphere', 'elemental_scroll', 'fire_ember', 'light_sphere', 'nature_elixir', 'pixel_elixir']
     }
   },
   computed: {
@@ -117,6 +178,14 @@ export default {
     queryGames() {
       const lastKey = this.GameState.state.nextToken
       this.socket.emit('query-games', {lastKey})
+    },
+
+    iconPath(value) {
+      return require(`@/assets/icons/${value}.png`)
+    },
+
+    setIcon(img) {
+      this.selectedIcon = img
     }
   },
   
@@ -161,10 +230,14 @@ export default {
     height: 8vh;
     width:100%;
   }
+
   .opulence-banner-img {
     width: 100%;
     max-width: 20em;
   }
+
+
+  
   .hero-container {
       background-color: rgba(0, 0, 0, 0.75);
       height: 100%;
@@ -172,7 +245,10 @@ export default {
       min-height: 100vh;
       min-width: 35vw;
       max-width: 35vw;
+      padding-top: 0.5em;
+      box-sizing: border-box;
   }
+
   .game-selection {
     display: flex;
     flex-direction: column;
@@ -238,6 +314,86 @@ export default {
     color: rgba(255, 255, 255, 0.8);
     font-size: 2em;
     text-align: center;
+  }
+
+
+  .stats-container {
+    position: relative;
+    display: flex;
+    padding: 1.25em;
+    gap: 0.5em;
+  }
+
+  .player-icon {
+    position: relative;
+    width: 6em;
+    height: 6em;
+    min-width: 6em;
+    border: 1px solid #e89b4e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+  }
+
+  .icon-selection {
+    position: absolute;
+    width: 16em;
+    max-height: 16em;
+    background-color: #2d3036;
+    overflow-y: auto;
+    
+    margin-top: 0.5em;
+    top: 100%; /* Display below the player-icon */
+    left: 50%;
+    transform: translateX(-50%);
+    
+    display: flex;
+    padding: 1em;
+    gap: .25em;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .icons {
+    transition: 0.3s ease-in-out;
+    width: 4em;
+    height: 4em;
+    cursor: pointer;
+    border: 2px solid #e89b4e;
+    
+  }
+
+  .icons:hover {
+    transform: scale(1.1);
+    border: 2px solid #e89b4e;
+  }
+
+  .icons:active {
+    transition: 0.1s ease-in-out;
+    cursor:pointer;
+    transform: translateY(1px);
+    transform: scale(1.05);
+    opacity: 70%;
+  }
+  
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    box-sizing: border-box;
+  }
+
+  .table th, td {
+    border-top: 1px solid #e89b4e;
+    padding: 0.5rem;
+  }
+
+
+  .stats-txt {
+    color: rgb(255, 255, 255);
   }
 
 </style>

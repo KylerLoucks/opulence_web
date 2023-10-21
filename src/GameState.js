@@ -30,6 +30,7 @@ const state = reactive({
     {
       "sid": "WWxbPZRWHvr_L7lNAAAF",
       "hp": 10,
+      "icon": "default",
       "shield": {
         "rune": null,
         "power": 0
@@ -86,6 +87,7 @@ const state = reactive({
     {
       "sid": "other_sid1",
       "hp": 5,
+      "icon": "default",
       "shield": {
         "rune": null,
         "power": 0
@@ -129,6 +131,7 @@ const state = reactive({
     {
       "sid": "other_sid2",
       "hp": 10,
+      "icon": "default",
       "shield": {
         "rune": null,
         "power": 0
@@ -187,6 +190,7 @@ const state = reactive({
     {
       "sid": "other_sid3",
       "hp": 10,
+      "icon": "default",
       "shield": {
         "rune": null,
         "power": 0
@@ -245,6 +249,7 @@ const state = reactive({
     {
       "sid": "other_sid4",
       "hp": 10,
+      "icon": "default",
       "shield": {
         "rune": null,
         "power": 0

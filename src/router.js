@@ -52,9 +52,6 @@ const routes = [
 		props: false, // Pass route params as props to the component
 		beforeEnter: (to, from, next) => {
 			try {
-
-			
-			// Call your WebSocket function to join the game room here
 			const gameId = to.params.gameid;
 			const createdGame = utils.state.createdGame
 			console.log(gameId)

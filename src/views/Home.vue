@@ -9,11 +9,6 @@
           </div>
       </Transition>
       <span v-if="!GameState.state.showSettings" id="mobile-hamburger" class="material-icons" v-on:click="GameState.state.showSettings = true">menu</span>
-      
-      <!-- <Authenticate v-if="!AuthState.state.isAuthenticated && !AuthState.state.skipAuthentication"></Authenticate> -->
-      
-      
-
     
       
       <div class="games-parent-container" >
@@ -128,11 +123,6 @@
         }
       },
       methods: {
-
-        // joinRoom: function(gameid) {
-        //     this.$router.push({ name: 'game', params: { gameid: gameid } });
-
-        // },
 
         // rooms with socket io
         joinRoom: function(gameid) {

@@ -58,8 +58,9 @@ class Shield:
         }
 
 class Player:
-    def __init__(self, sid: str, hp=10, shield: Shield=None, name: str=None, data=None):
+    def __init__(self, sid: str, icon: str=None, hp=10, shield: Shield=None, name: str=None, data=None):
         self.sid = sid
+        self.icon = "default" if icon == None else icon
         self.hp = hp
         self.shield = Shield() if shield == None else shield
         self.runes = {rune:0 for rune in RUNES}
@@ -186,7 +187,8 @@ class Player:
             "isDead": self.isDead,
             "vines": self.vines,
             "burn": self.burn,
-            "display_name": self.display_name
+            "display_name": self.display_name,
+            "icon": self.icon
         }
 
     # used for testing

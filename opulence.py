@@ -105,7 +105,7 @@ class Opulence:
                     "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                         #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                         #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                        #shield = :shield, \
+                                        #shield = :shield, #icon = :icon \
                                         #time_to_live = :ttl",
                     "ExpressionAttributeNames": {
                         "#hp": "hp",
@@ -118,6 +118,7 @@ class Opulence:
                         "#display_name": "display_name",
                         "#dead": "is_dead",
                         "#shield": "shield",
+                        "#icon": "icon",
                         "#time_to_live": "TTL"
                     },
                     "ExpressionAttributeValues": {
@@ -131,6 +132,7 @@ class Opulence:
                         ":display_name": { "S": player.display_name },
                         ":dead": { "BOOL": player.isDead },
                         ":shield": { "S": json.dumps(player.shield.__dict__()) },
+                        ":icon": { "S": player.icon },
                         ":ttl": { "N": time_to_live}
                     },
                 }
@@ -280,7 +282,7 @@ class Opulence:
                         "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                             #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                            #shield = :shield, \
+                                            #shield = :shield, #icon = :icon, \
                                             #time_to_live = :ttl",
                         "ExpressionAttributeNames": {
                             "#hp": "hp",
@@ -293,6 +295,7 @@ class Opulence:
                             "#display_name": "display_name",
                             "#dead": "is_dead",
                             "#shield": "shield",
+                            "#icon": "icon",
                             "#time_to_live": "TTL"
                         },
                         "ExpressionAttributeValues": {
@@ -306,7 +309,8 @@ class Opulence:
                             ":display_name": { "S": player.display_name },
                             ":dead": { "BOOL": player.isDead },
                             ":shield": { "S": json.dumps(player.shield.__dict__()) },
-                            ":ttl": { "N": time_to_live}
+                            ":icon": { "S": player.icon },
+                            ":ttl": { "N": time_to_live }
                         }
                     }
                 }
@@ -360,7 +364,8 @@ class Opulence:
         for index, player in enumerate(player_data):
             sid = player['SK']['S'].split('USER#')[1]
             name = player['display_name']['S']
-            self.players[sid] = Player(sid, name=name, data=player_data[index])
+            icon = player['icon']['S']
+            self.players[sid] = Player(sid, name=name, icon=icon, data=player_data[index])
             self.player_sids.append(sid)
 
 
@@ -403,14 +408,14 @@ class Opulence:
 
 
     # TODO: Remove player_names field
-    def add_player(self, sid: str, name: str=None):
+    def add_player(self, sid: str, name: str=None, icon: str=None):
         num_players = len(self.players)
         if num_players >= self.config.max_players \
                 or sid in self.players \
                 or self.game_started:
             return False
         sid = num_players if sid==None else sid
-        self.players[sid] = Player(sid, name=name, hp=self.config.player_starting_health)
+        self.players[sid] = Player(sid, name=name, icon=icon, hp=self.config.player_starting_health)
         self.player_sids.append(sid)
         self.player_names.append(name)
         self.game_logs.join_game_log(self.players[sid].display_name)

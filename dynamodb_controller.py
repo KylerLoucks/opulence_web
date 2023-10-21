@@ -142,7 +142,7 @@ class DynamoDBController:
             #             'SK': { "S": f'USER#{user} }'
             #         }
             #     )
-            
+            sid
             self.dynamodb.batch_write_item(
                 RequestItems={
                     self.table: delete_items
@@ -152,18 +152,63 @@ class DynamoDBController:
         except Exception as e:
             print("failed to delete game: ", e)
 
-    def get_user(self, userid):
-        response = self.dynamodb.get_item(
-            TableName=self.table,
-            Key={
-                'PK': {"S": f"USER#{userid}"},
-                'SK': {"S": f"USER#{userid}"}
-            },
-            
-            ReturnConsumedCapacity='TOTAL',
+    def get_user_stats(self, userid):
+        try:
+            response = self.dynamodb.get_item(
+                TableName=self.table,
+                Key={
+                    'PK': {"S": f"USER#{userid}"},
+                    'SK': {"S": f"USER#{userid}"}
+                },
+                
+                ReturnConsumedCapacity='TOTAL',
 
-        )
-        return response
+            )
+            return response
+        except Exception as e:
+            print("failed to grab user stats: ", e)
+
+    def change_user_icon(self, userid, icon_name):
+        '''
+        Updates the users icon with the specified name if they own it.
+        '''
+        try:
+            response = self.dynamodb.update_item(
+                TableName=self.table,
+                Key={
+                    'PK': {"S": f"USER#{userid}"},
+                    'SK': {"S": f"USER#{userid}"}
+                },
+                UpdateExpression="SET icon = :icon_name",
+                ConditionExpression="contains(owned_icons, :icon_name)",
+                ExpressionAttributeValues={
+                    ":icon_name": icon_name
+                }
+            )
+            return response
+        except Exception as e:
+            print("failed to change user icon: ", e)
+
+    def add_new_icon(self, userid, icon_name):
+        '''
+        Adds a new icon to the list of icons the user owns.
+        '''
+        try:
+            response = self.dynamodb.update_item(
+                TableName=self.table,
+                Key={
+                    'PK': {"S": f"USER#{userid}"},
+                    'SK': {"S": f"USER#{userid}"}
+                },
+                UpdateExpression="SET owned_icons = list_append(owned_icons, :icon_name)",
+                ConditionExpression="NOT contains(owned_icons, :icon_name)",
+                ExpressionAttributeValues={
+                    ":icon_name": icon_name
+                }
+            )
+            return response
+        except Exception as e:
+            print("failed to add a newly owned icon: ", e)
     
     # Deserialize dynamodb data types for more readable dictionaries
     def deserialize(self, data):
@@ -205,13 +250,16 @@ class DynamoDBController:
 
 
 
-controller = DynamoDBController()
-user = "T_nZPAzhkDQ1RB7fAAAD"
-data = controller.get_user(user)
-item = data['Item']
-deserialize = controller.deserialize(data=item)
-type_convert = controller.convert_decimal_to_int(deserialize)
-pprint.pprint(type_convert)
+# controller = DynamoDBController()
+# user = "T_nZPAzhkDQ1RB7fAAAD"
+# data = controller.get_user_stats(user)
+# item = data['Item']
+# deserialize = controller.deserialize(data=item)
+# type_convert = controller.convert_decimal_to_int(deserialize)
+# pprint.pprint(type_convert)
+
+
+
 
 # last_key = data.get('LastEvaluatedKey')
 # data = controller.find_gaames(3, last_key)
