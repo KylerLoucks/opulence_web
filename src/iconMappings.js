@@ -33,7 +33,12 @@ const iconMappings = reactive({
   starfire: colors.rare,
   wind_elixir: colors.common,
   wind_hand: colors.rare,
-  wizard: colors.uncommon
+  wizard: colors.uncommon,
+  dark_staff: colors.very_rare,
+  dark_cloak: colors.very_rare,
+  solar_water_sphere: colors.legendary,
+  aether_sword: colors.legendary
+
 })
 
 export default {

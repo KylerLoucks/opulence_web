@@ -7,7 +7,7 @@
           <div class="settings">
             <fa v-if="GameState.state.showSettings" icon="fa-solid fa-close" size="lg" class="settings-close-btn" v-on:click="GameState.state.showSettings = false" />
           </div>
-      </Transition>
+      </transition>
       <span v-if="!GameState.state.showSettings" id="mobile-hamburger" class="material-icons" v-on:click="GameState.state.showSettings = true">menu</span>
     
       

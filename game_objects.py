@@ -58,7 +58,17 @@ class Shield:
         }
 
 class Player:
-    def __init__(self, sid: str, icon: str=None, hp=10, shield: Shield=None, name: str=None, data=None):
+    def __init__(
+        self,
+        sid: str,
+        icon: str=None,
+        hp=10,
+        xp=0,
+        level=0,
+        shield: Shield=None,
+        name: str=None,
+        data=None
+    ):
         self.sid = sid
         self.icon = "default" if icon == None else icon
         self.hp = hp
@@ -77,6 +87,8 @@ class Player:
         self.won = False
         self.leg_cards_bought = 0
         self.dragons_owned = 0
+        self.xp = xp
+        self.level = level
 
         if data is not None:
             self._populate_from_dynamodb(data)

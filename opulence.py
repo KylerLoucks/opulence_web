@@ -12,6 +12,7 @@ import ulid
 from enums import Rune
 import pprint
 import os
+from xp_system import XPSystem
 from dotenv import load_dotenv
 ENV = os.environ.get("PYTHON_ENV", "dev")
 load_dotenv(f'.env.python.{ENV}')
@@ -29,6 +30,7 @@ class Opulence:
         self.dragon_shop = DragonShop(config=config)
         self.basic_card_shop = BasicCardShop(config=config)
         self.game_logs = GameLogs()
+        self.xp_system = XPSystem()
         self.game_started = False
         self.game_over = False
         self.turn_timer = None
@@ -105,7 +107,7 @@ class Opulence:
                     "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                         #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                         #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                        #shield = :shield, #icon = :icon \
+                                        #shield = :shield, #icon = :icon, \
                                         #time_to_live = :ttl",
                     "ExpressionAttributeNames": {
                         "#hp": "hp",
@@ -408,14 +410,14 @@ class Opulence:
 
 
     # TODO: Remove player_names field
-    def add_player(self, sid: str, name: str=None, icon: str=None):
+    def add_player(self, sid: str, name: str=None, icon: str=None, xp=0, level=0):
         num_players = len(self.players)
         if num_players >= self.config.max_players \
                 or sid in self.players \
                 or self.game_started:
             return False
         sid = num_players if sid==None else sid
-        self.players[sid] = Player(sid, name=name, icon=icon, hp=self.config.player_starting_health)
+        self.players[sid] = Player(sid, name=name, icon=icon, xp=xp, level=level, hp=self.config.player_starting_health)
         self.player_sids.append(sid)
         self.player_names.append(name)
         self.game_logs.join_game_log(self.players[sid].display_name)
@@ -563,6 +565,7 @@ class Opulence:
         # add the dragon to the player
         if self.dragon_shop.buy(self.players[sid], card_idx):
             self.boring_turn = True
+            self.xp_system.give_xp(self.players[sid], xp=15)
             self._next_turn(self.players[sid])
             return True
 
@@ -598,6 +601,7 @@ class Opulence:
         card_activated = card['card'].activate(player1, player2, self._get_living_players(), self.game_logs)
         if card_activated:
             player1.update_affinities()
+            self.xp_system.give_xp(player1, xp=card.power)
             self._next_turn(self.players[sid1])
             return True
         else:
@@ -707,6 +711,9 @@ class Opulence:
 
         players_alive = self._get_living_players()
 
+        # grant 5xp to every player that survived the turn.
+        for player in players_alive: self.xp_system.give_xp(player, xp=5)
+
         # everyone has 0 hp
         if not players_alive:
             self.game_logs.winner_log(sid=None)
@@ -715,10 +722,14 @@ class Opulence:
             return True
 
         if len(players_alive) == 1:
-            winner = list(players_alive.values())[0].display_name
-            list(players_alive.values())[0].won = True
+            player = list(players_alive.values())[0]
+            winner = player.display_name
+            player.won = True
+            # Winner gets double xp
+            self.xp_system.give_xp(player, xp=player.xp * 2)
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
+
             self._update_user_data()
             return True
         return False
@@ -755,6 +766,8 @@ class Opulence:
             dragons_owned = player.dragons_owned
             legendary_cards_bought = player.leg_cards_bought
 
+            xp_req = self.xp_system.calc_xp_needed(player)
+
             # Use ADD expression to increment/add values that don't exist
             transact_items.append(
                 {
@@ -764,18 +777,25 @@ class Opulence:
                             "PK": { "S": f"USER#{player.sid}" },
                             "SK": { "S": f"USER#{player.sid}" },
                         },
-                        "UpdateExpression": "ADD #wins :wins, \
-                                            #dragons :dragons, \
-                                            #leg_cards :leg_cards",
+                        "UpdateExpression": "SET #wins = #wins + :wins, \
+                                            #dragons = #dragons + :dragons, \
+                                            #leg_cards = #leg_cards + :leg_cards, \
+                                            #xp = :xp, #lvl = :level, #xp_req = :req_xp",
                         "ExpressionAttributeNames": {
                             "#wins": "total_wins",
                             "#dragons": "dragons_owned",
                             "#leg_cards": "leg_cards_bought",
+                            "#xp": "xp",
+                            "#lvl": "level",
+                            "#xp_req": "xp_req"
                         },
                         "ExpressionAttributeValues": {
                             ":wins": { "N": str(wins) },
                             ":dragons": { "N": str(dragons_owned)},
-                            ":leg_cards": { "N": str(legendary_cards_bought)}
+                            ":leg_cards": { "N": str(legendary_cards_bought)},
+                            ":xp": { "N": str(player.xp)},
+                            ":level": { "N": str(player.level)},
+                            ":req_xp": { "N": str(xp_req)}
                         },
                     }
                 },

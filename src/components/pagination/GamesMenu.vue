@@ -26,7 +26,7 @@
             <th class="stats-txt">0</th>
           </tr>
           <tr class="stats-txt">
-            <td class="stats-txt">XP To Next Level</td>
+            <td class="stats-txt">XP Required for Next Level</td>
             <th class="stats-txt">200</th>
           </tr>
           <tr class="stats-txt">
@@ -42,7 +42,7 @@
       </table>
 
       <div class="player-icon" >
-        <img v-on:click="selectIcon = !selectIcon" draggable="false" :src="iconPath(selectedIcon)" style="width: 100%; height: 100%;"/>
+        <img v-on:click="selectIcon = !selectIcon, sendPopup()" draggable="false" :src="iconPath(selectedIcon)" style="width: 100%; height: 100%;"/>
           
         <div v-if="selectIcon" class="icon-selection">
           <div v-for="(img) in ownedIcons" :key="img">
@@ -50,6 +50,7 @@
               v-if="img !== selectedIcon"
               class="icons"
               v-on:click="setIcon(img)"
+              :alt="img"
               :src="iconPath(img)"
               :style="{ borderColor: iconMappings.state[img] }"
               draggable="false"
@@ -115,6 +116,8 @@ import GameState from "@/GameState";
 import utils from "@/utils";
 import iconMappings from "@/iconMappings"
 
+import emitter from '@/EventBus';
+
 export default {
   name: "GamesMenu",
   components: {
@@ -143,7 +146,7 @@ export default {
       showStats: true,
       selectIcon: false,
       selectedIcon: "default",
-      ownedIcons: ['default', 'elemental_scroll', 'arcane_arrow', 'arcane_elixir', 'arcane_key', 'arcane_rune', 'arcane_sphere', 'dust_sphere', 'elemental_scroll', 'fire_ember', 'light_sphere', 'nature_elixir', 'pixel_elixir']
+      ownedIcons: ['default', 'aether_sword', 'dark_staff', 'elemental_scroll', 'arcane_arrow', 'arcane_elixir', 'arcane_key', 'arcane_rune', 'arcane_sphere', 'dust_sphere', 'elemental_scroll', 'fire_ember', 'light_sphere', 'nature_elixir', 'pixel_elixir']
     }
   },
   computed: {
@@ -186,6 +189,10 @@ export default {
 
     setIcon(img) {
       this.selectedIcon = img
+    },
+
+    sendPopup() {
+      emitter.emit('showPopup', {message: "Your message here.", icon: "logo"});
     }
   },
   

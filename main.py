@@ -430,6 +430,8 @@ def create_game(data):
         user_stats = ddb.get_user_stats(userid=sid)
         if user_stats:
             icon = user_stats.get('icon')
+            xp = user_stats.get('xp')
+            level = user_stats.get('level')
 
         opulence = Opulence(
             Config(max_players=max_players,
@@ -441,7 +443,7 @@ def create_game(data):
             ))
         game_id = opulence.game_id
         opulence.game_logs.create_game_log(name, game_id)
-        opulence.add_player(sid, flask.session['displayName'], icon)
+        opulence.add_player(sid, flask.session['displayName'], icon, xp, level)
         opulence._save_state()         # Add game and user to dynamodb.
 
 
@@ -496,6 +498,8 @@ def on_join(data):
         user_stats = ddb.get_user_stats(userid=sid)
         if user_stats:
             icon = user_stats.get('icon')
+            xp = user_stats.get('xp')
+            level = user_stats.get('level')
 
         if name == '':
             name = flask.session['sid']
@@ -522,7 +526,7 @@ def on_join(data):
             opulence.game_logs.logs = [] # clear logs for next action
             return {'success': True, 'sid': str(request.sid), 'logs': logs, 'game_data': opulence._get_game_data(), 'dragon_shop': opulence._get_dragon_shop_data(), 'current_turn_sid': opulence._get_current_turn_sid()}
 
-        elif opulence.add_player(sid, name, icon):
+        elif opulence.add_player(sid, name, icon, xp, level):
             log(f"added {name} to game")
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID

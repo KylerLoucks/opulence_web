@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <Popup></Popup>
     <router-view></router-view>
   </div>
   
@@ -9,11 +10,13 @@
   // import { ref } from "vue";
   
   // Register websocket event listeners
+  import Popup from '@/components/Popup.vue'
   import './socketListeners'
   
   export default {
     name: 'App',
     components: {
+      Popup,
     },
     setup() {
       // const hp = ref(0);
