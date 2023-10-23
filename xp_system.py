@@ -20,6 +20,7 @@ class XPSystem:
     def give_xp(self, player: Player, xp):
         # This function takes a player and an XP int and gives it to the user,
         # returning True if he levels up, or False if he doesn't
+        prior_lvl = player.level
         current_lvl = player.level
         current_xp = player.xp
         current_xp += xp
@@ -32,10 +33,7 @@ class XPSystem:
                 current_lvl += 1
 
             # give loot crates for the level ups
-            # if "commonCrate" not in userData["inventory"]:
-            #     userData["inventory"]["commonCrate"] = 0
-            # userData["inventory"]["commonCrate"] += (currentLV - priorLV)
-            # dumpData()
+            player.inventory['common_crates'] += (current_lvl - prior_lvl)
             return True
             
         else:

@@ -26,12 +26,8 @@
             <th class="stats-txt">0</th>
           </tr>
           <tr class="stats-txt">
-            <td class="stats-txt">Current XP</td>
-            <th class="stats-txt">200</th>
-          </tr>
-          <tr class="stats-txt">
-            <td class="stats-txt">XP Required for Next Level</td>
-            <th class="stats-txt">200</th>
+            <td class="stats-txt">XP</td>
+            <th class="stats-txt">0 / 200</th>
           </tr>
           <tr class="stats-txt">
             <td class="stats-txt">Legendary Cards Bought</td>
