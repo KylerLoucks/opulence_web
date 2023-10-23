@@ -142,7 +142,6 @@ class DynamoDBController:
             #             'SK': { "S": f'USER#{user} }'
             #         }
             #     )
-            sid
             self.dynamodb.batch_write_item(
                 RequestItems={
                     self.table: delete_items
@@ -182,7 +181,7 @@ class DynamoDBController:
                 UpdateExpression="SET icon = :icon_name",
                 ConditionExpression="contains(owned_icons, :icon_name)",
                 ExpressionAttributeValues={
-                    ":icon_name": icon_name
+                    ":icon_name": {"S": icon_name }
                 }
             )
             return response
@@ -203,7 +202,7 @@ class DynamoDBController:
                 UpdateExpression="SET owned_icons = list_append(owned_icons, :icon_name)",
                 ConditionExpression="NOT contains(owned_icons, :icon_name)",
                 ExpressionAttributeValues={
-                    ":icon_name": icon_name
+                    ":icon_name": {"S": icon_name}
                 }
             )
             return response

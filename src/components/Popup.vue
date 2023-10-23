@@ -1,9 +1,16 @@
+<!--
+  Popup Component
+  Displays Popups that are emitted to the event bus.
+
+  Dependencies:
+    - Requires the 'EventBus.js' mitt to pull popup events.
+-->
 <template>
     
     <div id="popup-container">
       <div v-for="popup in popups" :key="popup.id" class="popup-container">
         <transition name="popup" appear>
-          <div class="popup">
+          <div class="popup" :style="{ borderColor: popup.borderColor }">
             <img
               class="icon"
               :alt="popup.icon"
@@ -38,10 +45,12 @@
       displayPopup(payload) {
         const message = payload.message
         const icon = payload.icon
+        const borderColor = payload.borderColor
         const popup = {
             id: Date.now(), // Unique ID based on the current time
-            message: message,
-            icon: icon
+            message,
+            icon,
+            borderColor
         };
         this.popups.push(popup);
         
@@ -64,6 +73,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
+  pointer-events: none;
 }
 
 .icon {
@@ -81,8 +91,9 @@
   align-items: center;
   background-color: rgba(0,0,0,0.8);
   color: #fff;
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: .5em .5em;
+  border-radius: .25em;
+  border: 1px solid
 }
 
 /* Transition classes */

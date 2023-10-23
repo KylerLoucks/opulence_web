@@ -26,6 +26,10 @@
             <th class="stats-txt">0</th>
           </tr>
           <tr class="stats-txt">
+            <td class="stats-txt">Current XP</td>
+            <th class="stats-txt">200</th>
+          </tr>
+          <tr class="stats-txt">
             <td class="stats-txt">XP Required for Next Level</td>
             <th class="stats-txt">200</th>
           </tr>
@@ -42,7 +46,7 @@
       </table>
 
       <div class="player-icon" >
-        <img v-on:click="selectIcon = !selectIcon, sendPopup()" draggable="false" :src="iconPath(selectedIcon)" style="width: 100%; height: 100%;"/>
+        <img v-on:click="selectIcon = !selectIcon" draggable="false" :src="iconPath(selectedIcon)" style="width: 100%; height: 100%;"/>
           
         <div v-if="selectIcon" class="icon-selection">
           <div v-for="(img) in ownedIcons" :key="img">
@@ -116,8 +120,6 @@ import GameState from "@/GameState";
 import utils from "@/utils";
 import iconMappings from "@/iconMappings"
 
-import emitter from '@/EventBus';
-
 export default {
   name: "GamesMenu",
   components: {
@@ -190,10 +192,6 @@ export default {
     setIcon(img) {
       this.selectedIcon = img
     },
-
-    sendPopup() {
-      emitter.emit('showPopup', {message: "Your message here.", icon: "logo"});
-    }
   },
   
   created: function() {

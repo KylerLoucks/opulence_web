@@ -13,6 +13,10 @@ Parameters:
     Description: S3 Bucket Name containing the /dist folder and main.py for Opulence
     Type: String
     Default: op-storage
+  GameStateTable:
+    Description: Name of DynamoDB Table used for storing Opulence Game and User state
+    Type: String
+    Default: opulence-data
 
 Resources:
   SGInstance:
@@ -67,6 +71,20 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:::${OpulenceS3Storage}"
                   - !Sub "arn:aws:s3:::${OpulenceS3Storage}/*"
+        - PolicyName: DynamoDBGameState
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GameStateTable}
         - PolicyName: GetCodeDeployAgent
           PolicyDocument:
             Version: 2012-10-17

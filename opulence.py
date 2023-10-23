@@ -22,9 +22,9 @@ class Opulence:
         self.game_id = str(ulid.ULID()) if not game_id else game_id
         self.players = dict()
         self.player_sids = []
-        self.player_names = []
         self.turn = 0
         self.runes_taken = 0
+        self.base_game_xp = 100
         self.config = config
         self.card_shop = CardShop(config=config)
         self.dragon_shop = DragonShop(config=config)
@@ -284,7 +284,7 @@ class Opulence:
                         "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                             #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                            #shield = :shield, #icon = :icon, \
+                                            #shield = :shield, #icon = :icon, #xp = :xp, #lvl = :lvl \
                                             #time_to_live = :ttl",
                         "ExpressionAttributeNames": {
                             "#hp": "hp",
@@ -298,6 +298,8 @@ class Opulence:
                             "#dead": "is_dead",
                             "#shield": "shield",
                             "#icon": "icon",
+                            "#xp": "xp",
+                            "#lvl": "level",
                             "#time_to_live": "TTL"
                         },
                         "ExpressionAttributeValues": {
@@ -312,6 +314,8 @@ class Opulence:
                             ":dead": { "BOOL": player.isDead },
                             ":shield": { "S": json.dumps(player.shield.__dict__()) },
                             ":icon": { "S": player.icon },
+                            ":xp": { "N": str(player.xp) },
+                            ":lvl": { "N": str(player.lvl) },
                             ":ttl": { "N": time_to_live }
                         }
                     }
@@ -366,8 +370,7 @@ class Opulence:
         for index, player in enumerate(player_data):
             sid = player['SK']['S'].split('USER#')[1]
             name = player['display_name']['S']
-            icon = player['icon']['S']
-            self.players[sid] = Player(sid, name=name, icon=icon, data=player_data[index])
+            self.players[sid] = Player(sid, name=name, data=player_data[index])
             self.player_sids.append(sid)
 
 
@@ -408,8 +411,6 @@ class Opulence:
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
-
-    # TODO: Remove player_names field
     def add_player(self, sid: str, name: str=None, icon: str=None, xp=0, level=0):
         num_players = len(self.players)
         if num_players >= self.config.max_players \
@@ -419,7 +420,6 @@ class Opulence:
         sid = num_players if sid==None else sid
         self.players[sid] = Player(sid, name=name, icon=icon, xp=xp, level=level, hp=self.config.player_starting_health)
         self.player_sids.append(sid)
-        self.player_names.append(name)
         self.game_logs.join_game_log(self.players[sid].display_name)
         self._save_player_state(player=self.players[sid])
         return True
@@ -431,8 +431,6 @@ class Opulence:
         if self.game_over:
             del self.players[sid]
             self.player_sids.remove(sid)
-            if name in self.player_names:
-                self.player_names.remove(name)
 
             self._delete_player_state(player_sid=sid)
             return True
@@ -445,27 +443,21 @@ class Opulence:
             if sid == current_player: 
                 self.game_logs.leave_game_log(self.players[sid].display_name, while_started=True, disconnected=disconnected)
                 print(f"player left the game while it was their turn: {name}")
-                del self.players[sid]
-                if name in self.player_names:
-                    self.player_names.remove(name)
+                # del self.players[sid]
 
-                self._delete_player_state(player_sid=sid)
+                # self._delete_player_state(player_sid=sid)
                 self._next_turn(player_left_during_turn=True)
                 return True
             else:
                 print(f"player left the game: {name}")
                 self.game_logs.leave_game_log(self.players[sid].display_name, disconnected=disconnected)
-                del self.players[sid]
-                if name in self.player_names:
-                    self.player_names.remove(name)
+                # del self.players[sid]
                 return True
         else: 
             print(f"player left the game before the game started: {name}")
             self.game_logs.leave_game_log(self.players[sid].display_name, disconnected=disconnected)
             del self.players[sid]
             self.player_sids.remove(sid)
-            if name in self.player_names:
-                self.player_names.remove(name)
             self._delete_player_state(player_sid=sid)
             return True
 
@@ -718,6 +710,11 @@ class Opulence:
         if not players_alive:
             self.game_logs.winner_log(sid=None)
             self.tied_game = True
+
+            # grant every player 100 base xp
+            for id, player in self.players.items():
+                self.xp_system.give_xp(player, self.base_game_xp)
+
             self._update_user_data()
             return True
 
@@ -729,6 +726,10 @@ class Opulence:
             self.xp_system.give_xp(player, xp=player.xp * 2)
             self.game_logs.winner_log(winner)
             self.game_logs.winner = winner
+            
+            # grant every player 100 base xp
+            for id, player in self.players.items():
+                self.xp_system.give_xp(player, self.base_game_xp)
 
             self._update_user_data()
             return True
@@ -787,7 +788,7 @@ class Opulence:
                             "#leg_cards": "leg_cards_bought",
                             "#xp": "xp",
                             "#lvl": "level",
-                            "#xp_req": "xp_req"
+                            "#xp_req": "required_xp"
                         },
                         "ExpressionAttributeValues": {
                             ":wins": { "N": str(wins) },

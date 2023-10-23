@@ -105,6 +105,9 @@ class Player:
         self.burn = int(data['burn']['N'])
         self.runes = json.loads(data['runes']['S'])
         self.affinities = json.loads(data['affinities']['S'])
+        self.xp = int(data['xp']['N'])
+        self.level = int(data['level']['N'])
+        self.icon = data['icon']['S']
         
         shield_data = json.loads(data['shield']['S'])
         if shield_data['rune'] == None:

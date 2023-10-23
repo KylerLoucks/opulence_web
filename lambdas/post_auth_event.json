@@ -1,0 +1,22 @@
+{
+    "version": "1",
+    "region": "us-east-1",
+    "userPoolId": "us-east-1_oE6xNLqlz",
+    "userName": "test4",
+    "callerContext": {
+        "awsSdkVersion": "aws-sdk-unknown-unknown",
+        "clientId": "6v0nmvata8lpjt8crpj5jc69bf"
+    },
+    "triggerSource": "PostConfirmation_ConfirmSignUp",
+    "request": {
+        "userAttributes": {
+            "sub": "c84c7b68-34b8-4f8a-908c-983b21a4258a",
+            "cognito:email_alias": "kyler+2@loucksland.com",
+            "email_verified": "true",
+            "cognito:user_status": "CONFIRMED",
+            "email": "kyler+2@loucksland.com"
+        }
+    },
+    "response": {}
+}
+  

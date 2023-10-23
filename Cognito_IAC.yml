@@ -1,9 +1,20 @@
+Parameters:
+  pOpulenceGameState:
+    Description: Name of DynamoDB Table used for storing Opulence Game and User state
+    Type: String
+    Default: opulence-data
+  
+  pACMCertArn:
+    Description: ARN of the ACM certifcate used for the DNS
+    Type: String
+    Default: arn:aws:acm:us-east-1:728365681514:certificate/057e24b5-e908-4a27-a6f1-173ec9eeda43
+
 Resources:
 
   userPool:
    Type : AWS::Cognito::UserPool
    Properties:
-    UserPoolName: OpulenceUserPool
+    UserPoolName: OpulenceUserPool2
     AccountRecoverySetting: 
       RecoveryMechanisms: 
         - Name: verified_email  # Recovery only by email
@@ -15,7 +26,7 @@ Resources:
       - preferred_username
     
     # Password Policy for user sign-in
-    Policies: 
+    Policies:
       PasswordPolicy: 
         MinimumLength: 6
         RequireLowercase: false
@@ -28,8 +39,17 @@ Resources:
     MfaConfiguration: "OFF"
 
     # Lambda functions for e.g. post auth
-    # LambdaConfig: 
-    #   LambdaConfig
+    LambdaConfig: 
+      PostConfirmation : !GetAtt postConfirmLambda.Arn
+
+  # Required for email confirmation links to work.
+  userPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      CustomDomainConfig: 
+        CertificateArn: !Ref pACMCertArn
+      Domain: auth.playopulence.com # replace with valid domain and subdomain
+      UserPoolId: !Ref userPool
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -43,3 +63,70 @@ Resources:
         - http://localhost:8080
       PreventUserExistenceErrors: ENABLED  # Prevent saying user not found if password was incorrect. Instead, always say password was invalid.
 
+
+
+  lambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBGameState
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${pOpulenceGameState}
+
+
+  postConfirmLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Populates DynamoDB with default attributes when the user confirms their account.
+      Runtime: python3.11
+      Role: !GetAtt lambdaRole.Arn
+      Environment:
+        Variables:
+          ACCOUNT_ID: !Sub ${AWS::AccountId}
+          DDB_TABLE: opulence-data
+      Handler: index.handler
+      Timeout: 240
+      Code:
+        ZipFile: !Sub |
+          import boto3
+
+          def handler(event, context):
+            print(event)
+
+  # Allows Cognito to invoke the lambda
+  lambdaCognitoResourcePolicy: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref postConfirmLambda
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: 
+        !GetAtt userPool.Arn
+
+  postLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${postConfirmLambda}
+      RetentionInDays: 30

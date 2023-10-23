@@ -450,7 +450,7 @@ def create_game(data):
         games_dict[game_id] = opulence # add the game to the games dict
         flask.session['gameID'] = game_id # add the gameid to the clients flask session dict
 
-        games_list[game_id] = {"gameID": game_id, "started": opulence.game_started, "users": opulence.player_names}
+        games_list[game_id] = {"gameID": game_id, "started": opulence.game_started}
         join_room(game_id) # join the flask room corresponding to the gameID of the newly created game
         logs = opulence.game_logs.logs
         emit('current-room-id', str(flask.session['gameID'])) # send the client what their current gameID is

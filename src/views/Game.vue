@@ -688,6 +688,7 @@
   import utils from "@/utils";
 
   import { clearTurnTimer } from "@/socketListeners";
+  import emitter from '@/EventBus';
   
   export default {
     name: 'GameView',
@@ -796,6 +797,7 @@
 
       takeRune(element) {
         let data = element
+        emitter.emit('showPopup', {message: `Took +1 ${element.toLowerCase()} rune.`, icon: "logo", borderColor: "#2799ff"});
         this.socket.emit('take-rune', data)
       },
   
@@ -847,7 +849,8 @@
         this.tutorial = true;
     
       },
-  
+      
+      // TODO: Add callback from ws to show popup if the player can't afford.
       buyCard: function(index) {
         this.socket.emit('buy-card', {'index': index})
       },
