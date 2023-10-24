@@ -250,13 +250,11 @@ class DynamoDBController:
 
         # If the data isn't a list:
         if isinstance(data, dict):
-            python_data = {k: deserializer.deserialize(v) for k,v in data.items()}
-            return python_data
+            return {k: deserializer.deserialize(v) for k,v in data.items()}
         elif isinstance(data, list):
             deserialized_data = []
             for item in data:
-                python_data = {k: deserializer.deserialize(v) for k,v in item.items()}
-                deserialized_data.append(python_data)
+                deserialized_data.append({k: deserializer.deserialize(v) for k,v in item.items()})
             return deserialized_data
     
     def convert_decimal_to_int(self, data):

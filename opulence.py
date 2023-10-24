@@ -13,6 +13,7 @@ from enums import Rune
 import pprint
 import os
 from xp_system import XPSystem
+from game_state_manager import GameStateManager
 from dotenv import load_dotenv
 ENV = os.environ.get("PYTHON_ENV", "dev")
 load_dotenv(f'.env.python.{ENV}')
@@ -41,6 +42,7 @@ class Opulence:
 
         self.dynamodb = boto3.client('dynamodb', region_name="us-east-1")
         self.table_name = os.environ['DDB_TABLE'] # "testdatapksk"
+        self.game_state_manager = GameStateManager(self, self.dynamodb, self.table_name)
 
     def _save_player_state(self, player):
         """
@@ -815,7 +817,7 @@ class Opulence:
                             ":level": { "N": str(player.level)},
                             ":req_xp": { "N": str(xp_req)},
                             ":common_crates": { "N": str(player.rewards.get('common_crates', 0))},
-                            ":keys": {"N": player.rewards.get('keys', 0)}
+                            ":keys": {"N": str(player.rewards.get('keys', 0))}
                         },
                     }
                 },
