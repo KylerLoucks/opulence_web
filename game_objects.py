@@ -67,6 +67,7 @@ class Player:
         level=0,
         shield: Shield=None,
         name: str=None,
+        rewards: dict={},
         data=None
     ):
         self.sid = sid
@@ -83,12 +84,15 @@ class Player:
         self.vines = 0
         self.burn = 0
 
+        # level, xp and rewards
+        self.xp = xp
+        self.level = level
+        self.rewards = rewards
+
         # state to store after the game ends
         self.won = False
         self.leg_cards_bought = 0
         self.dragons_owned = 0
-        self.xp = xp
-        self.level = level
 
         if data is not None:
             self._populate_from_dynamodb(data)
@@ -108,6 +112,8 @@ class Player:
         self.xp = int(data['xp']['N'])
         self.level = int(data['level']['N'])
         self.icon = data['icon']['S']
+        self.rewards['common_crates'] = data['rewards']['M']['common_crates']['N']
+        self.rewards['keys'] = data['rewards']['M']['keys']['N']
         
         shield_data = json.loads(data['shield']['S'])
         if shield_data['rune'] == None:

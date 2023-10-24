@@ -135,6 +135,13 @@ class Opulence:
                         ":dead": { "BOOL": player.isDead },
                         ":shield": { "S": json.dumps(player.shield.__dict__()) },
                         ":icon": { "S": player.icon },
+                        ":xp": { "N": str(player.xp) },
+                        ":lvl": { "N": str(player.lvl) },
+                        ":rewards": {"M": {
+                                            "common_crates": {"N": str(player.rewards.get('common_crates', 0))},
+                                            "keys": {"N": str(player.rewards.get('keys', 0))}
+                                        },
+                                    },
                         ":ttl": { "N": time_to_live}
                     },
                 }
@@ -284,8 +291,8 @@ class Opulence:
                         "UpdateExpression": "SET #hp = :hp, #runes = :runes, #affinities = :affinities, \
                                             #cards = :cards, #dragons = :dragons, #vines = :vines, \
                                             #burn = :burn, #display_name = :display_name, #dead = :dead, \
-                                            #shield = :shield, #icon = :icon, #xp = :xp, #lvl = :lvl \
-                                            #time_to_live = :ttl",
+                                            #shield = :shield, #icon = :icon, #xp = :xp, #lvl = :lvl, \
+                                            #rewards = :rewards, #time_to_live = :ttl",
                         "ExpressionAttributeNames": {
                             "#hp": "hp",
                             "#runes": "runes",
@@ -300,6 +307,7 @@ class Opulence:
                             "#icon": "icon",
                             "#xp": "xp",
                             "#lvl": "level",
+                            "#rewards": "rewards",
                             "#time_to_live": "TTL"
                         },
                         "ExpressionAttributeValues": {
@@ -316,6 +324,11 @@ class Opulence:
                             ":icon": { "S": player.icon },
                             ":xp": { "N": str(player.xp) },
                             ":lvl": { "N": str(player.lvl) },
+                            ":rewards": {"M": {
+                                                "common_crates": {"N": str(player.rewards.get('common_crates', 0))},
+                                                "keys": {"N": str(player.rewards.get('keys', 0))}
+                                            },
+                                        },
                             ":ttl": { "N": time_to_live }
                         }
                     }
@@ -411,14 +424,14 @@ class Opulence:
             print(f"Game was started. It's {self.players[sid2].display_name}'s turn")
             return True
 
-    def add_player(self, sid: str, name: str=None, icon: str=None, xp=0, level=0):
+    def add_player(self, sid: str, name: str=None, icon: str=None, xp=0, level=0, rewards={}):
         num_players = len(self.players)
         if num_players >= self.config.max_players \
                 or sid in self.players \
                 or self.game_started:
             return False
         sid = num_players if sid==None else sid
-        self.players[sid] = Player(sid, name=name, icon=icon, xp=xp, level=level, hp=self.config.player_starting_health)
+        self.players[sid] = Player(sid, name=name, icon=icon, xp=xp, level=level, rewards=rewards, hp=self.config.player_starting_health)
         self.player_sids.append(sid)
         self.game_logs.join_game_log(self.players[sid].display_name)
         self._save_player_state(player=self.players[sid])
@@ -781,14 +794,18 @@ class Opulence:
                         "UpdateExpression": "SET #wins = #wins + :wins, \
                                             #dragons = #dragons + :dragons, \
                                             #leg_cards = #leg_cards + :leg_cards, \
-                                            #xp = :xp, #lvl = :level, #xp_req = :req_xp",
+                                            #xp = :xp, #lvl = :level, #xp_req = :req_xp, \
+                                            #inv.common_crates = #inv.common_crates + :common_crates, \
+                                            #inv.#keys = #inv.#keys + :keys",
                         "ExpressionAttributeNames": {
                             "#wins": "total_wins",
                             "#dragons": "dragons_owned",
                             "#leg_cards": "leg_cards_bought",
                             "#xp": "xp",
                             "#lvl": "level",
-                            "#xp_req": "required_xp"
+                            "#xp_req": "required_xp",
+                            "#inv": "inventory",
+                            "#keys": "keys"
                         },
                         "ExpressionAttributeValues": {
                             ":wins": { "N": str(wins) },
@@ -796,7 +813,9 @@ class Opulence:
                             ":leg_cards": { "N": str(legendary_cards_bought)},
                             ":xp": { "N": str(player.xp)},
                             ":level": { "N": str(player.level)},
-                            ":req_xp": { "N": str(xp_req)}
+                            ":req_xp": { "N": str(xp_req)},
+                            ":common_crates": { "N": str(player.rewards.get('common_crates', 0))},
+                            ":keys": {"N": player.rewards.get('keys', 0)}
                         },
                     }
                 },

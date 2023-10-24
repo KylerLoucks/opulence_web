@@ -208,6 +208,34 @@ class DynamoDBController:
             return response
         except Exception as e:
             print("failed to add a newly owned icon: ", e)
+
+    def open_common_crate(self, userid):
+        '''
+        Opens a common crate (removes a key and crate from the players inventory).
+        Fails if the user doesn't have more than zero keys and crates.
+        '''
+        try:
+            response = self.dynamodb.update_item(
+                TableName=self.table,
+                Key={
+                    'PK': {"S": f"USER#{userid}"},
+                    'SK': {"S": f"USER#{userid}"}
+                },
+                UpdateExpression="SET #inv.common_crates = #inv.common_crates - :one, \
+                                    #inv.#keys = #inv.#keys - :one",
+                ConditionExpression="#inv.common_crates > :zero and #inv.#keys > :zero",
+                ExpressionAttributeNames={
+                    "#inv": "inventory",
+                    "#keys": "keys"
+                },
+                ExpressionAttributeValues={
+                    ":one": {"N": "-1"},
+                    ":zero": {"N": "0"}
+                }
+            )
+            return response
+        except Exception as e:
+            print("failed to open a crate: ", e)
     
     # Deserialize dynamodb data types for more readable dictionaries
     def deserialize(self, data):
@@ -219,39 +247,36 @@ class DynamoDBController:
             return
 
         deserializer = TypeDeserializer()
-        deserialized_data = []
 
         # If the data isn't a list:
         if isinstance(data, dict):
             python_data = {k: deserializer.deserialize(v) for k,v in data.items()}
-            deserialized_data.append(python_data)
+            return python_data
         elif isinstance(data, list):
+            deserialized_data = []
             for item in data:
                 python_data = {k: deserializer.deserialize(v) for k,v in item.items()}
                 deserialized_data.append(python_data)
-        return deserialized_data
+            return deserialized_data
     
     def convert_decimal_to_int(self, data):
-        updated_data = []
-        for item in data:
-            updated_item = {}
-            for key, value in item.items():
-                if isinstance(value, Decimal):
-                    updated_item[key] = int(value)
-                elif isinstance(value, list):
-                    updated_item[key] = self.convert_decimal_to_int(value)
-                elif isinstance(value, dict):
-                    updated_item[key] = self.convert_decimal_to_int(value.values())
-                else:
-                    updated_item[key] = value
-            updated_data.append(updated_item)
-        return updated_data
+        if isinstance(data, list):
+            return [self.convert_decimal_to_int(item) for item in data]
+        elif isinstance(data, dict):
+            return {key: self.convert_decimal_to_int(value) for key, value in data.items()}
+        elif isinstance(data, Decimal):
+            return int(data)
+        else:
+            return data
 
 
 
-# controller = DynamoDBController()
-# user = "T_nZPAzhkDQ1RB7fAAAD"
-# data = controller.get_user_stats(user)
+# ddb = DynamoDBController()
+# user = "b8648ae0-0568-4424-b452-c67a51eb8f6"
+
+
+
+
 # item = data['Item']
 # deserialize = controller.deserialize(data=item)
 # type_convert = controller.convert_decimal_to_int(deserialize)

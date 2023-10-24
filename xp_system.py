@@ -33,7 +33,7 @@ class XPSystem:
                 current_lvl += 1
 
             # give loot crates for the level ups
-            player.inventory['common_crates'] += (current_lvl - prior_lvl)
+            player.rewards['common_crates'] += (current_lvl - prior_lvl)
             return True
             
         else:

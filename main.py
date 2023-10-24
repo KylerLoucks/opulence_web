@@ -49,7 +49,27 @@ def opulence_init(game_id: str=None) -> Opulence:
     opulence._load_game_state()
     return opulence
 
+def get_user_stats(userid):
+    default_stats = {
+        'icon': 'default',
+        'xp': 0,
+        'level': 1,
+        'rewards': {}
+    }
+    
+    data = ddb.get_user_stats(userid=userid).get('Item')
+    if not data:
+        return default_stats
 
+    deserial = ddb.deserialize(data)
+    user_stats = ddb.convert_decimal_to_int(deserial)
+
+    return {
+        'icon': user_stats.get('icon', default_stats['icon']),
+        'xp': user_stats.get('xp', default_stats['xp']),
+        'level': user_stats.get('level', default_stats['level']),
+        'rewards': user_stats.get('inventory', default_stats['rewards'])
+    }
 
 @socketio.on("redis-test")
 def redis_test(data):
@@ -425,13 +445,8 @@ def create_game(data):
             name = flask.session['sid']
         flask.session['displayName'] = name
 
-        # Grab user icon from the db
-        icon = "default"
-        user_stats = ddb.get_user_stats(userid=sid)
-        if user_stats:
-            icon = user_stats.get('icon')
-            xp = user_stats.get('xp')
-            level = user_stats.get('level')
+        # Grab user stats from the db
+        stats = get_user_stats(sid)
 
         opulence = Opulence(
             Config(max_players=max_players,
@@ -443,8 +458,7 @@ def create_game(data):
             ))
         game_id = opulence.game_id
         opulence.game_logs.create_game_log(name, game_id)
-        opulence.add_player(sid, flask.session['displayName'], icon, xp, level)
-        opulence._save_state()         # Add game and user to dynamodb.
+        opulence.add_player(sid, flask.session['displayName'], stats['icon'], stats['xp'], stats['level'], stats['rewards'])
 
 
         games_dict[game_id] = opulence # add the game to the games dict
@@ -493,13 +507,8 @@ def on_join(data):
         sid = authenticated_users.get(flask.session.get('sub'), str(flask.session['sid']))
         name = flask.session['displayName']
 
-        # Grab user icon from the db
-        icon = "default"
-        user_stats = ddb.get_user_stats(userid=sid)
-        if user_stats:
-            icon = user_stats.get('icon')
-            xp = user_stats.get('xp')
-            level = user_stats.get('level')
+        # Grab user stats from the db
+        stats = get_user_stats(sid)
 
         if name == '':
             name = flask.session['sid']
@@ -526,7 +535,7 @@ def on_join(data):
             opulence.game_logs.logs = [] # clear logs for next action
             return {'success': True, 'sid': str(request.sid), 'logs': logs, 'game_data': opulence._get_game_data(), 'dragon_shop': opulence._get_dragon_shop_data(), 'current_turn_sid': opulence._get_current_turn_sid()}
 
-        elif opulence.add_player(sid, name, icon, xp, level):
+        elif opulence.add_player(sid, name, stats['icon'], stats['xp'], stats['level'], stats['rewards']):
             log(f"added {name} to game")
             flask.session['gameID'] = gameID        # put the gameID in the users flask session
             join_room(gameID)                       # join the flask_room corresponding to the gameID
