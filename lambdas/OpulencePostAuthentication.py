@@ -32,7 +32,7 @@ def lambda_handler(event, context):
                 ExpressionAttributeValues={
                     ":name": {"S": username},
                     ":email": {"S": email},
-                    ":icons": {"L": [{"S": 'default'}]},
+                    ":icons": {"SS": ['default']},
                     ":drag_own": {"N": "0"},
                     ":leg_cards": {"N": "0"},
                     ":lvl": {"N": "1"},

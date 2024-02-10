@@ -781,12 +781,9 @@ class Opulence:
             wins = 1 if player.won else 0
             dragons_owned = player.dragons_owned
             legendary_cards_bought = player.leg_cards_bought
-
             xp_req = self.xp_system.calc_xp_needed(player)
 
-            # Use ADD expression to increment/add values that don't exist
-            transact_items.append(
-                {
+            player_update = {
                     "Update": {
                         "TableName": self.table_name,
                         "Key": {
@@ -816,12 +813,18 @@ class Opulence:
                             ":xp": { "N": str(player.xp)},
                             ":level": { "N": str(player.level)},
                             ":req_xp": { "N": str(xp_req)},
-                            ":common_crates": { "N": str(player.rewards.get('common_crates', 0))},
                             ":keys": {"N": str(player.rewards.get('keys', 0))}
                         },
                     }
-                },
-            )
+                }
+
+
+            for crate_reward in list(player.rewards.keys()):
+                if crate_reward != 'keys':
+                    player_update['Update']['UpdateExpression'] += f", #inv.{crate_reward} = #inv.{crate_reward} + :{crate_reward}"
+                    player_update['Update']['ExpressionAttributeValues'][f':{crate_reward}'] = { "N": str(player.rewards[f'{crate_reward}'])}
+
+            transact_items.append(player_update)
 
             # Update the users game history with details on the game
             transact_items.append(

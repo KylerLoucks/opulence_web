@@ -20,7 +20,6 @@ class XPSystem:
     def give_xp(self, player: Player, xp):
         # This function takes a player and an XP int and gives it to the user,
         # returning True if he levels up, or False if he doesn't
-        prior_lvl = player.level
         current_lvl = player.level
         current_xp = player.xp
         current_xp += xp
@@ -32,8 +31,9 @@ class XPSystem:
                 current_xp -= self.calc_req_xp(player)
                 current_lvl += 1
 
-            # give loot crates for the level ups
-            player.rewards['common_crates'] += (current_lvl - prior_lvl)
+                # give loot crates for the level ups
+                rarity = self.roll_crate_rarity()
+                player.rewards[rarity] += 1
             return True
             
         else:
@@ -41,3 +41,11 @@ class XPSystem:
     
     def roll_key(self, xp):
         return random.random() < xp / 999
+    
+    def roll_crate_rarity(self):
+        rarities = ['uncommon', 'common', 'rare', 'very_rare', 'epic', 'legendary']
+        rarity = 'uncommon'
+        while random.randint(1, 4) == 1 and rarity != 'legendary':
+            index = rarities.index(rarity)
+            rarity = rarities[index + 1]
+        return f'{rarity}_crates'

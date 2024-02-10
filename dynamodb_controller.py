@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 # Unique ID with a sortable time prefix
 from ulid import ULID
+from rewards import open_crate, Rewards
 
 ENV = os.environ.get("PYTHON_ENV", "dev")
 load_dotenv(f'.env.python.{ENV}')
@@ -209,11 +210,7 @@ class DynamoDBController:
         except Exception as e:
             print("failed to add a newly owned icon: ", e)
 
-    def open_common_crate(self, userid):
-        '''
-        Opens a common crate (removes a key and crate from the players inventory).
-        Fails if the user doesn't have more than zero keys and crates.
-        '''
+    def add_card(self, userid, card):
         try:
             response = self.dynamodb.update_item(
                 TableName=self.table,
@@ -221,17 +218,55 @@ class DynamoDBController:
                     'PK': {"S": f"USER#{userid}"},
                     'SK': {"S": f"USER#{userid}"}
                 },
-                UpdateExpression="SET #inv.common_crates = #inv.common_crates - :one, \
-                                    #inv.#keys = #inv.#keys - :one",
-                ConditionExpression="#inv.common_crates > :zero and #inv.#keys > :zero",
-                ExpressionAttributeNames={
-                    "#inv": "inventory",
-                    "#keys": "keys"
-                },
+                UpdateExpression="SET #inv.cards = list_append(#inv.cards, :card)",
                 ExpressionAttributeValues={
-                    ":one": {"N": "-1"},
-                    ":zero": {"N": "0"}
+                    ":card": {"S": json.dumps(card)}
                 }
+            )
+            return response
+        except Exception as e:
+            print("failed to add a newly owned icon: ", e)
+
+    def open_crate(self, rarity, userid):
+        '''
+        Opens a common crate (removes a key and crate from the players inventory).
+        Fails if the user doesn't have more than zero keys and crates.
+        '''
+        item = open_crate(Rewards.common)
+        type = "common"
+        try:
+            update_expression = "SET #inv.#crate_type = #inv.#crate_type - :one, \
+                                    #inv.#keys = #inv.#keys - :one, "
+            condition_expression="#inv.#crate_type > :zero and #inv.#keys > :zero "
+            expression_attribute_names = {
+                "#inv": "inventory",
+                "#keys": "keys",
+                "#crate_type": f"{type}_crates"
+            }
+            expression_attribute_values = {
+                ":one": {"N": "-1"},
+                ":zero": {"N": "0"}
+            }
+
+            if next(iter(item.keys())) == "icon":
+                update_expression += "ADD owned_icons :icon_name"
+                expression_attribute_values[":icon_name"] = {"S": item['icon']}
+                # condition_expression += "AND NOT contains(owned_icons, :icon_name)"
+
+            elif next(iter(item.keys())) == "card":
+                update_expression += "#inv.cards = list_append(#inv.cards, :card)"
+                expression_attribute_values[":card"] = {"S": json.dumps(item['card'])} 
+
+            response = self.dynamodb.update_item(
+                TableName=self.table,
+                Key={
+                    'PK': {"S": f"USER#{userid}"},
+                    'SK': {"S": f"USER#{userid}"}
+                },
+                UpdateExpression=update_expression,
+                ConditionExpression=condition_expression,
+                ExpressionAttributeNames=expression_attribute_names,
+                ExpressionAttributeValues=expression_attribute_values
             )
             return response
         except Exception as e:
